@@ -1,9 +1,9 @@
 // main.tsx or index.tsx
-import { ChakraProvider } from '@chakra-ui/react'
-import ReactDOM from 'react-dom'
-import App from './App'
+import { ChakraProvider } from '@chakra-ui/react';
+import App from './App';
+import ReactDOM from 'react-dom/client'; // Use 'react-dom/client' instead of 'react-dom'
 
-import * as Sentry from '@sentry/react'
+import * as Sentry from '@sentry/react';
 
 Sentry.init({
   dsn: 'https://02f55fc52e1bd034e48363376e41b9c5@o4507982706769920.ingest.us.sentry.io/4507985165352960',
@@ -18,11 +18,19 @@ Sentry.init({
   // Session Replay
   replaysSessionSampleRate: 0.1, // This sets the sample rate at 10%. You may want to change it to 100% while in development and then sample at a lower rate in production.
   replaysOnErrorSampleRate: 1.0, // If you're not already sampling the entire session, change the sample rate to 100% when sampling sessions where errors occur.
-})
+});
 
-ReactDOM.render(
+// Get the root element in your HTML
+const container = document.getElementById('root');
+
+// Use React 18's createRoot API
+const root = ReactDOM.createRoot(container!);
+
+// Render the App using the new createRoot API
+root.render(
   <ChakraProvider>
     <App />
-  </ChakraProvider>,
-  document.getElementById('root')
-)
+  </ChakraProvider>
+);
+
+////////////////// WORKING CODE WITH CORRECT import ReactDOM from 'react-dom/client'////////////////
