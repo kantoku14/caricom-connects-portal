@@ -1,5 +1,5 @@
-import React from 'react'
-import { ChakraProvider, Box, Heading, Text } from '@chakra-ui/react'
+import React from 'react';
+import { ChakraProvider, Box, Heading, Text } from '@chakra-ui/react';
 
 const App: React.FC = () => {
   return (
@@ -9,10 +9,9 @@ const App: React.FC = () => {
         <Text mt={4}>
           Your centralized hub for cross-regional collaboration
         </Text>
-        <button onClick={() => methodDoesNotExist()}>Break the world</button>
       </Box>
     </ChakraProvider>
-  )
-}
+  );
+};
 
-export default App
+export default App;
