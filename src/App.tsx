@@ -6,9 +6,6 @@ import { Home } from './pages/Home'; // Your Home page
 import { ChakraProvider, Box } from '@chakra-ui/react';
 import { AuthProvider } from './context/AuthContext';
 
-// Log the project ID to verify it's correctly loaded
-console.log('Project ID:', import.meta.env.VITE_APPWRITE_PROJECT_ID);
-
 export const App = () => {
   return (
     <ChakraProvider>
