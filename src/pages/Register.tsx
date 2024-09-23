@@ -1,6 +1,3 @@
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
 import {
   Button,
   FormControl,
@@ -18,6 +15,10 @@ import {
   Text,
 } from '@chakra-ui/react';
 import { useState, useEffect } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { account } from '../appwriteConfig'; // Import Appwrite config
 import { useAuth } from '../context/AuthContext';
 
 // Validation schema using Zod
@@ -31,18 +32,17 @@ const schema = z.object({
       message:
         'Password must contain uppercase, lowercase, number, and special character',
     }),
-  terms: z
-    .boolean()
-    .refine((val) => val === true, {
-      message: 'You must accept the terms and conditions',
-    }),
+  terms: z.boolean().refine((val) => val === true, {
+    message: 'You must accept the terms and conditions',
+  }),
   role: z.enum(['Buyer', 'Seller'], { message: 'Please select a role' }),
 });
 
 export const Register = () => {
-  const { register: signUp } = useAuth(); // Assuming AuthContext provides register method
+  const { register: signUp } = useAuth();
   const toast = useToast();
   const [suggestedPassword, setSuggestedPassword] = useState('');
+  const [loading, setLoading] = useState(false); // OAuth loading state
 
   // React Hook Form setup
   const {
@@ -51,21 +51,18 @@ export const Register = () => {
     formState: { errors, isSubmitting },
     setValue,
     trigger,
-    reset, // <-- added reset
+    reset,
   } = useForm({
     resolver: zodResolver(schema),
   });
 
-  // Automatically generate browser-suggested password
   useEffect(() => {
-    // Using the browser's built-in password suggestion
     const passwordInput = document.getElementById('password');
     if (passwordInput) {
       passwordInput.setAttribute('autocomplete', 'new-password');
     }
   }, []);
 
-  // Strong password generator function
   const generatePassword = () => {
     const charset =
       'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()';
@@ -74,14 +71,12 @@ export const Register = () => {
       password += charset[Math.floor(Math.random() * charset.length)];
     }
     setSuggestedPassword(password);
-    setValue('password', password, { shouldValidate: true }); // Automatically fill the password field and trigger validation
-    trigger('password'); // Manually trigger validation for password
+    setValue('password', password, { shouldValidate: true });
+    trigger('password');
   };
 
-  // On form submit
   const onSubmit = async (data) => {
     try {
-      // Call the AuthContext register method
       await signUp(data.fullName, data.email, data.password, data.role);
       toast({
         title: 'Account created.',
@@ -91,8 +86,7 @@ export const Register = () => {
         isClosable: true,
         colorScheme: 'teal',
       });
-
-      reset(); // <-- Reset the form after a successful submission
+      reset();
     } catch (error) {
       console.error('Error creating account:', error);
       toast({
@@ -103,6 +97,29 @@ export const Register = () => {
         isClosable: true,
         colorScheme: 'teal',
       });
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    setLoading(true);
+    try {
+      await account.createOAuth2Session(
+        'google', // OAuth provider
+        'http://localhost:5175/success', // Success URL
+        'http://localhost:5175/failed', // Failure URL
+        ['email', 'profile'] // Scopes
+      );
+    } catch (error) {
+      console.error('OAuth Login Error:', error);
+      toast({
+        title: 'Login Failed',
+        description: 'Unable to log in with Google. Please try again later.',
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -147,7 +164,7 @@ export const Register = () => {
                 type="password"
                 placeholder="Enter your password"
                 {...register('password')}
-                autoComplete="new-password" // Browser password suggestion
+                autoComplete="new-password"
               />
             </Tooltip>
             {suggestedPassword && (
@@ -208,6 +225,18 @@ export const Register = () => {
             width="full"
           >
             Sign Up
+          </Button>
+
+          {/* Google OAuth Button */}
+          <Button
+            mt={4}
+            colorScheme="teal"
+            variant="outline"
+            isLoading={loading}
+            onClick={handleGoogleLogin}
+            width="full"
+          >
+            Sign in with Google
           </Button>
         </VStack>
       </form>

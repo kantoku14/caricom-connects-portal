@@ -1,26 +1,29 @@
-import { ChakraProvider, Box } from '@chakra-ui/react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
-import { Register } from './pages/Register';
-import { Home } from './pages/Home';
+import { Register } from './pages/Register'; // Correct import path
+import { Success } from './pages/Success'; // Success route
+import { Failure } from './pages/Failure'; // Failure route
+import { Home } from './pages/Home'; // Your Home page
+import { ChakraProvider, Box } from '@chakra-ui/react';
 import { AuthProvider } from './context/AuthContext';
-import { Navbar } from './components/NavBar';
+
+// Log the project ID to verify it's correctly loaded
+console.log('Project ID:', import.meta.env.VITE_APPWRITE_PROJECT_ID);
 
 export const App = () => {
   return (
     <ChakraProvider>
-      <AuthProvider>
-        <Router>
+      <Router>
+        <AuthProvider>
           <Box p={4}>
-            <Navbar />
-            <Box as="main" mt={8}>
-              <Routes>
-                <Route path="/register" element={<Register />} />
-                <Route path="/" element={<Home />} />
-              </Routes>
-            </Box>
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/success" element={<Success />} />
+              <Route path="/failed" element={<Failure />} />
+            </Routes>
           </Box>
-        </Router>
-      </AuthProvider>
+        </AuthProvider>
+      </Router>
     </ChakraProvider>
   );
 };
