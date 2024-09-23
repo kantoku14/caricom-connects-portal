@@ -15,42 +15,11 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
 
   /**
-   * login function:
-   * - Takes an email and password.
-   * - Attempts to log in using Appwrite's email/password session method.
-   * - Updates the `user` state with the logged-in user data.
-   */
-  const login = async (email, password) => {
-    try {
-      const loggedIn = await account.createEmailPasswordSession(
-        email,
-        password
-      ); // Use createEmailPasswordSession for login
-      setUser(loggedIn);
-      console.log('User successfully logged in:', loggedIn);
-    } catch (error) {
-      console.error('Login Error:', error);
-      throw error; // Re-throw the error for the UI to catch and display
-    }
-  };
-
-  /**
-   * logout function:
-   * - Deletes the current session (logs the user out).
-   * - Sets the `user` state to null after logout.
-   */
-  const logout = async () => {
-    await account.deleteSession('current');
-    setUser(null);
-    console.log('User successfully logged out.');
-  };
-
-  /**
    * register function:
    * - Takes fullName, email, password, and role as parameters.
    * - Registers a new user using Appwrite's create method with a unique ID.
    * - Updates the user's name and preferences (fullName and role).
-   * - Logs in the user after successful registration.
+   * - Logs in the user after successful registration (kept login for internal use only).
    */
   const register = async (fullName, email, password, role) => {
     try {
@@ -59,7 +28,7 @@ export const AuthProvider = ({ children }) => {
       console.log('User successfully created:', newUser);
 
       // Log in the user after registration
-      await login(email, password);
+      await login(email, password); // Internally handled login after registration
 
       // Update the user's full name using account.updateName()
       await account.updateName(fullName);
@@ -100,9 +69,9 @@ export const AuthProvider = ({ children }) => {
     init();
   }, []);
 
-  // Provide the user state and authentication functions (login, logout, register) to the components wrapped by the AuthProvider.
+  // Provide the user state and registration function to the components wrapped by the AuthProvider.
   return (
-    <AuthContext.Provider value={{ current: user, login, logout, register }}>
+    <AuthContext.Provider value={{ current: user, register }}>
       {children}
     </AuthContext.Provider>
   );
