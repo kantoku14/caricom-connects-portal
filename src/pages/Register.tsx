@@ -7,12 +7,15 @@ import {
   Box,
   VStack,
   FormErrorMessage,
+  RadioGroup,
+  Radio,
+  HStack,
   useToast,
 } from '@chakra-ui/react';
 import { useAuth } from '../context/AuthContext';
 
 export const Register = () => {
-  const { register: signUp } = useAuth(); // Access the registration method from the context
+  const { register: signUp } = useAuth(); // Access the registration method from AuthContext
   const toast = useToast();
 
   // `react-hook-form` for form state and validation
@@ -24,8 +27,8 @@ export const Register = () => {
 
   const onSubmit = async (data) => {
     try {
-      const { email, password } = data;
-      await signUp(email, password); // Call the signUp method with email and password
+      const { fullName, email, password, role } = data;
+      await signUp(fullName, email, password, role); // Include fullName and role in the signUp call
       toast({
         title: 'Account created.',
         description: 'Your account was successfully created!',
@@ -49,6 +52,20 @@ export const Register = () => {
     <Box p={8} maxWidth="400px" mx="auto">
       <form onSubmit={handleSubmit(onSubmit)}>
         <VStack spacing={4}>
+          <FormControl isInvalid={errors.fullName}>
+            <FormLabel htmlFor="fullName">Full Name</FormLabel>
+            <Input
+              id="fullName"
+              placeholder="Enter your full name"
+              {...register('fullName', {
+                required: 'Full name is required',
+              })}
+            />
+            <FormErrorMessage>
+              {errors.fullName && errors.fullName.message}
+            </FormErrorMessage>
+          </FormControl>
+
           <FormControl isInvalid={errors.email}>
             <FormLabel htmlFor="email">Email</FormLabel>
             <Input
@@ -84,6 +101,29 @@ export const Register = () => {
             />
             <FormErrorMessage>
               {errors.password && errors.password.message}
+            </FormErrorMessage>
+          </FormControl>
+
+          <FormControl as="fieldset" isInvalid={errors.role}>
+            <FormLabel as="legend">Select Role</FormLabel>
+            <RadioGroup defaultValue="Buyer">
+              <HStack spacing="24px">
+                <Radio
+                  value="Buyer"
+                  {...register('role', { required: 'Please select a role' })}
+                >
+                  Buyer
+                </Radio>
+                <Radio
+                  value="Seller"
+                  {...register('role', { required: 'Please select a role' })}
+                >
+                  Seller
+                </Radio>
+              </HStack>
+            </RadioGroup>
+            <FormErrorMessage>
+              {errors.role && errors.role.message}
             </FormErrorMessage>
           </FormControl>
 
