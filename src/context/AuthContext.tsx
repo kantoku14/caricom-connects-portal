@@ -16,29 +16,39 @@ export const AuthProvider = ({ children }) => {
 
   /**
    * register function:
-   * - Takes fullName, email, password, and role as parameters.
    * - Registers a new user using Appwrite's create method with a unique ID.
-   * - Updates the user's name and preferences (fullName and role).
-   * - Logs in the user after successful registration (kept login for internal use only).
+   * - Logs in the user after successful registration using `createEmailPasswordSession`.
    */
-  const register = async (fullName, email, password, role) => {
+  const register = async (email, password) => {
     try {
-      // Create a new user with a unique ID
+      // Create a new user with a unique ID, email, and password
       const newUser = await account.create(ID.unique(), email, password);
       console.log('User successfully created:', newUser);
 
       // Log in the user after registration
-      await login(email, password); // Internally handled login after registration
-
-      // Update the user's full name using account.updateName()
-      await account.updateName(fullName);
-      console.log('Full name successfully updated.');
-
-      // Update the user's role and other preferences using account.updatePrefs()
-      await account.updatePrefs({ role });
-      console.log('User role successfully updated.');
+      await login(email, password);
     } catch (error) {
       console.error('Registration Error:', error);
+      throw error;
+    }
+  };
+
+  /**
+   * login function:
+   * - Takes an email and password.
+   * - Logs the user in using Appwrite's `createEmailPasswordSession` method.
+   * - Updates the `user` state with the logged-in user data.
+   */
+  const login = async (email, password) => {
+    try {
+      const loggedIn = await account.createEmailPasswordSession(
+        email,
+        password
+      ); // Use createEmailPasswordSession for login
+      setUser(loggedIn);
+      console.log('User successfully logged in:', loggedIn);
+    } catch (error) {
+      console.error('Login Error:', error);
       throw error;
     }
   };
@@ -60,18 +70,12 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  /**
-   * useEffect:
-   * - Runs once when the component mounts.
-   * - Calls the `init` function to check if the user is already logged in when the app loads.
-   */
   useEffect(() => {
     init();
   }, []);
 
-  // Provide the user state and registration function to the components wrapped by the AuthProvider.
   return (
-    <AuthContext.Provider value={{ current: user, register }}>
+    <AuthContext.Provider value={{ current: user, register, login }}>
       {children}
     </AuthContext.Provider>
   );
