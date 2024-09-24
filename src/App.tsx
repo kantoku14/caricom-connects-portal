@@ -1,10 +1,11 @@
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
-import { Register } from './pages/Register'; // Correct import path
+import { Register } from './pages/Register'; // Correct import path for Register
 import { Success } from './pages/Success'; // Success route
 import { Failure } from './pages/Failure'; // Failure route
 import { Home } from './pages/Home'; // Your Home page
+import { Login } from './pages/Login'; // Login page
 import { ChakraProvider, Box } from '@chakra-ui/react';
-import { AuthProvider } from './context/AuthContext';
+import { AuthProvider } from './context/AuthContext'; // Importing AuthProvider for user authentication
 
 export const App = () => {
   return (
@@ -13,8 +14,16 @@ export const App = () => {
         <AuthProvider>
           <Box p={4}>
             <Routes>
+              {/* Home Route */}
               <Route path="/" element={<Home />} />
+
+              {/* Register Route */}
               <Route path="/register" element={<Register />} />
+
+              {/* Login Route */}
+              <Route path="/login" element={<Login />} />
+
+              {/* Success and Failure Routes */}
               <Route path="/success" element={<Success />} />
               <Route path="/failed" element={<Failure />} />
             </Routes>
