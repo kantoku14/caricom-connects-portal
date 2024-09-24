@@ -1,35 +1,48 @@
-import js from "@eslint/js";
-import typescript from "@typescript-eslint/eslint-plugin";
+import typescriptEslintPlugin from "@typescript-eslint/eslint-plugin";
+import reactPlugin from "eslint-plugin-react";
 import typescriptParser from "@typescript-eslint/parser";
+import globals from "globals";
 
 export default [
-  // Configuration for linting JavaScript files
-  js.configs.recommended,
-  
-  // Configuration for linting TypeScript files
   {
     files: ["**/*.ts", "**/*.tsx"],
     languageOptions: {
+      ecmaVersion: "latest", // ECMAScript version
+      sourceType: "module",  // Source type as module
       parser: typescriptParser,
+      globals: {
+        ...globals.browser,
+        ...globals.node,
+        console: "readonly",
+        fetch: "readonly",
+        MutationObserver: "readonly",
+      },
       parserOptions: {
-        ecmaVersion: "latest",
-        sourceType: "module",
+        jsx: true, // Enabling JSX parsing
       },
     },
     plugins: {
-      typescript,
+      "@typescript-eslint": typescriptEslintPlugin,
+      "react": reactPlugin,
     },
     rules: {
-      "typescript/no-unused-vars": "error",
-      "typescript/no-explicit-any": "warn",
-    },
-  },
-  // Configuration for common rules applied to both JavaScript and TypeScript files
-  {
-    files: ["**/*.js", "**/*.ts", "**/*.tsx"],
-    rules: {
-      "no-unused-vars": "warn",
       "no-console": "off",
+      "no-prototype-builtins": "error",
+      "no-cond-assign": "error",
+      "no-fallthrough": "error",
+      "no-empty": "warn",
+      "no-undef": "error",
+      "no-unused-vars": ["warn", { argsIgnorePattern: "^_" }],
+      "valid-typeof": "error",
+      "no-useless-escape": "error",
+      "no-self-assign": "error",
+    },
+    settings: {
+      react: {
+        version: "detect",
+      },
     },
   },
 ];
+
+///////////////// IT WORKS IT WORKS/////////////////////////////////
