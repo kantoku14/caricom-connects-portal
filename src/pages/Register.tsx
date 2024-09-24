@@ -13,6 +13,13 @@ import {
   Stack,
   Radio,
   Text,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+  useDisclosure,
 } from '@chakra-ui/react';
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
@@ -43,6 +50,9 @@ export const Register = () => {
   const toast = useToast();
   const [suggestedPassword, setSuggestedPassword] = useState('');
   const [loading, setLoading] = useState(false); // OAuth loading state
+  const [isSessionActive, setIsSessionActive] = useState(false);
+
+  const { isOpen, onOpen, onClose } = useDisclosure();
 
   // React Hook Form setup
   const {
@@ -56,11 +66,21 @@ export const Register = () => {
     resolver: zodResolver(schema),
   });
 
-  useEffect(() => {
-    const passwordInput = document.getElementById('password');
-    if (passwordInput) {
-      passwordInput.setAttribute('autocomplete', 'new-password');
+  // Check if a session is active immediately after registration and when the component mounts
+  const checkSession = async () => {
+    try {
+      const currentSession = await account.get(); // Check if the user is logged in
+      if (currentSession) {
+        setIsSessionActive(true);
+        onOpen(); // Open the modal to inform the user
+      }
+    } catch (error) {
+      setIsSessionActive(false);
     }
+  };
+
+  useEffect(() => {
+    checkSession(); // Check session on component mount
   }, []);
 
   const generatePassword = () => {
@@ -76,6 +96,17 @@ export const Register = () => {
   };
 
   const onSubmit = async (data) => {
+    if (isSessionActive) {
+      toast({
+        title: 'Active session',
+        description: 'Please log out before registering a new account.',
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+        colorScheme: 'teal',
+      });
+      return;
+    }
     try {
       await signUp(data.fullName, data.email, data.password, data.role);
       toast({
@@ -87,6 +118,9 @@ export const Register = () => {
         colorScheme: 'teal',
       });
       reset();
+
+      // Immediately check session after successful registration
+      await checkSession();
     } catch (error) {
       console.error('Error creating account:', error);
       toast({
@@ -109,6 +143,7 @@ export const Register = () => {
         'http://localhost:5175/failed', // Failure URL
         ['email', 'profile'] // Scopes
       );
+      await checkSession(); // Check session after Google login
     } catch (error) {
       console.error('OAuth Login Error:', error);
       toast({
@@ -125,7 +160,25 @@ export const Register = () => {
 
   return (
     <Box p={8} maxWidth="500px" mx="auto">
-      <form onSubmit={handleSubmit(onSubmit)}>
+      {/* Modal to inform the user about the active session */}
+      <Modal isOpen={isOpen} onClose={onClose}>
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>Active Session Detected</ModalHeader>
+          <ModalBody>
+            You are already logged in. Please log out first to register a new
+            account.
+          </ModalBody>
+          <ModalFooter>
+            <Button variant="ghost" onClick={onClose}>
+              Close
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+
+      {/* Registration form */}
+      <form onSubmit={handleSubmit(onSubmit)} disabled={isSessionActive}>
         <VStack spacing={4}>
           {/* Full Name Input */}
           <FormControl isInvalid={errors.fullName}>
@@ -134,6 +187,7 @@ export const Register = () => {
               id="fullName"
               placeholder="Enter your full name"
               {...register('fullName')}
+              isDisabled={isSessionActive} // Disable if session is active
             />
             <FormErrorMessage>
               {errors.fullName && errors.fullName.message}
@@ -149,6 +203,7 @@ export const Register = () => {
               placeholder="Enter your email"
               {...register('email')}
               autoComplete="email"
+              isDisabled={isSessionActive} // Disable if session is active
             />
             <FormErrorMessage>
               {errors.email && errors.email.message}
@@ -165,6 +220,7 @@ export const Register = () => {
                 placeholder="Enter your password"
                 {...register('password')}
                 autoComplete="new-password"
+                isDisabled={isSessionActive} // Disable if session is active
               />
             </Tooltip>
             {suggestedPassword && (
@@ -177,6 +233,7 @@ export const Register = () => {
               size="sm"
               onClick={generatePassword}
               colorScheme="teal"
+              isDisabled={isSessionActive} // Disable if session is active
             >
               Suggest Strong Password
             </Button>
@@ -190,10 +247,18 @@ export const Register = () => {
             <FormLabel htmlFor="role">Role</FormLabel>
             <RadioGroup>
               <Stack direction="row">
-                <Radio value="Buyer" {...register('role')}>
+                <Radio
+                  value="Buyer"
+                  {...register('role')}
+                  isDisabled={isSessionActive}
+                >
                   Buyer
                 </Radio>
-                <Radio value="Seller" {...register('role')}>
+                <Radio
+                  value="Seller"
+                  {...register('role')}
+                  isDisabled={isSessionActive}
+                >
                   Seller
                 </Radio>
               </Stack>
@@ -209,6 +274,7 @@ export const Register = () => {
               {...register('terms', {
                 required: 'You must accept the terms and conditions',
               })}
+              isDisabled={isSessionActive} // Disable if session is active
             >
               I agree to the Terms and Conditions
             </Checkbox>
@@ -223,6 +289,7 @@ export const Register = () => {
             colorScheme="teal"
             isLoading={isSubmitting}
             width="full"
+            isDisabled={isSessionActive} // Disable if session is active
           >
             Sign Up
           </Button>
@@ -235,6 +302,7 @@ export const Register = () => {
             isLoading={loading}
             onClick={handleGoogleLogin}
             width="full"
+            isDisabled={isSessionActive} // Disable if session is active
           >
             Sign in with Google
           </Button>
