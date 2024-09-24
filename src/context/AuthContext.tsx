@@ -1,4 +1,4 @@
-import { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useState, useEffect } from 'react';
 import { account, ID } from '../appwriteConfig'; // Ensure ID is imported from Appwrite for user creation
 import { useToast } from '@chakra-ui/react'; // Importing Chakra UI's toast for notifications
 
@@ -12,8 +12,23 @@ export function useAuth() {
 
 // AuthProvider component: Wraps around the application and provides authentication-related methods and user data
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null); // State to hold the currently logged-in user
+  const [user, setUser] = useState(null); // State to hold the currently logged-in user or null if no session exists
   const toast = useToast(); // Chakra UI's toast for showing feedback to the user
+
+  // Function to check if a session exists on app load or page refresh
+  async function checkSession() {
+    try {
+      const currentSession = await account.get(); // Get session information
+      setUser(currentSession); // If a session exists, set the user data
+    } catch (error) {
+      setUser(null); // If no session exists, clear the user state
+    }
+  }
+
+  // UseEffect to check session when the component (AuthProvider) mounts
+  useEffect(() => {
+    checkSession(); // Run session check on component mount
+  }, []);
 
   // Login function: Authenticates the user using Appwrite's email/password method
   async function login(email, password) {
@@ -102,9 +117,9 @@ export const AuthProvider = ({ children }) => {
     }
   }
 
-  // Providing the register and login functions via AuthContext, making them available to all child components
+  // Providing the user state, register, login, and session check functions via AuthContext
   return (
-    <AuthContext.Provider value={{ user, register, login }}>
+    <AuthContext.Provider value={{ user, register, login, checkSession }}>
       {children}
     </AuthContext.Provider>
   );
