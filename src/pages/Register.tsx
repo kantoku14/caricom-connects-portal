@@ -75,6 +75,7 @@ export const Register = () => {
         onOpen(); // Open the modal to inform the user
       }
     } catch (error) {
+      console.error('Error fetching session:', error); // Log the error for debugging
       setIsSessionActive(false);
     }
   };
