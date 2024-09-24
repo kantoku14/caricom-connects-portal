@@ -104,7 +104,7 @@ export const AuthProvider = ({ children }) => {
 
   // Providing the register and login functions via AuthContext, making them available to all child components
   return (
-    <AuthContext.Provider value={{ register, login }}>
+    <AuthContext.Provider value={{ user, register, login }}>
       {children}
     </AuthContext.Provider>
   );
