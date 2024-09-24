@@ -1,4 +1,5 @@
 // main.tsx or index.tsx
+import 'whatwg-fetch'; // Add the fetch polyfill at the top
 import { ChakraProvider } from '@chakra-ui/react';
 import { App } from './App'; // Named import for App
 import ReactDOM from 'react-dom/client'; // Use 'react-dom/client' instead of 'react-dom'
