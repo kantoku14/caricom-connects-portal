@@ -7,3 +7,4 @@ npx prettier --write 'src/**/*.{ts,tsx}'
 
 npx lint-staged
 
+npm ls
