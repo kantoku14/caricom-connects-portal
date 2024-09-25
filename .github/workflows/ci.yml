@@ -21,10 +21,10 @@ jobs:
           node-version: '22.8.0'
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci  # Use npm ci for exact versions
 
-      - name: Run tests
-        run: npm test
+      - name: Run tests with coverage
+        run: npm run test:coverage  # Run tests with coverage in CI
 
       - name: Build the project
         run: npm run build
