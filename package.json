@@ -5,9 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "test": "jest",  // Run tests without coverage
+    "test": "jest",  
     "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage",  // Run tests with coverage report
+    "test:coverage": "jest --coverage", 
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "format": "prettier --write 'src/**/*.{js,ts,tsx,json,css,md}'",
