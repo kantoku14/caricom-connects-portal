@@ -20,7 +20,12 @@ export const AuthProvider = ({ children }) => {
     try {
       const currentSession = await account.get(); // Get session information
       setUser(currentSession); // If a session exists, set the user data
+      console.log('Active session found. User is logged in:', currentSession); // Log when a session is active
     } catch (error) {
+      console.log(
+        'No active session found. User is not logged in. Error:',
+        error
+      ); // Log when no session is found
       setUser(null); // If no session exists, clear the user state
     }
   }
