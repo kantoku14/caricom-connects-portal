@@ -1,0 +1,9 @@
+#!/usr/bin/env sh
+. "$(dirname "$0")/_/husky.sh"
+
+# Add Prettier to format code before commit
+npx prettier --write 'src/**/*.{ts,tsx}'
+
+
+npx lint-staged
+

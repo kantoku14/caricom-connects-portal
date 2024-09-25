@@ -1,0 +1,10 @@
+# .husky/pre-rebase
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
+
+# Run tests before rebasing
+npm run test
+if [ $? -ne 0 ]; then
+  echo "Tests failed. Rebase aborted."
+  exit 1
+fi

@@ -1,0 +1,8 @@
+# .husky/post-checkout
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
+
+# Install dependencies if package.json has changed
+if [ -f package-lock.json ]; then
+  npm ci
+fi
