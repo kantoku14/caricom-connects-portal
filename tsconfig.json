@@ -15,6 +15,11 @@
     "jsx": "react-jsx",                             // Use JSX with React (React 17+)
     "noEmit": true                                  // Don't emit JavaScript files
   },
-  "include": ["src"],                               // Include only the src folder
+  "include": [
+    "src", 
+    "src/__tests__", 
+    "jest.config.ts",
+    "jest.setup.ts"
+, "__mocks__"  ],                                                // Include src, tests, and jest config/setup
   "exclude": ["node_modules", "dist"]               // Exclude node_modules and dist folders
 }
