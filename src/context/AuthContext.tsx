@@ -17,7 +17,10 @@ interface AuthContextProps {
     password: string,
     role: string
   ) => Promise<void>;
-  login: (email: string, password: string) => Promise<void>;
+  login: (
+    email: string,
+    password: string
+  ) => Promise<Models.User<Models.Preferences>>;
   checkSession: () => Promise<void>;
 }
 
@@ -59,8 +62,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }
 
-  // **Login function**: Handles user login
-  async function login(email: string, password: string) {
+  // **Login function**: Handles user login and returns the logged-in user
+  async function login(
+    email: string,
+    password: string
+  ): Promise<Models.User<Models.Preferences>> {
     try {
       // Notify the user that the login process has started
       toast({
@@ -72,7 +78,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       });
 
       // Step 1: Authenticate the user with email and password
-      const session = await account.createEmailPasswordSession(email, password);
+      await account.createEmailPasswordSession(email, password);
 
       // Step 2: Fetch the logged-in user's details
       const loggedInUser = await account.get();
@@ -88,6 +94,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         duration: 5000,
         isClosable: true,
       });
+
+      // Return the logged-in user
+      return loggedInUser;
     } catch (error) {
       if (error instanceof Error) {
         toast({
@@ -98,6 +107,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           isClosable: true,
         });
       }
+      throw error; // Re-throw error to handle it in the calling code
     }
   }
 
@@ -122,7 +132,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       await account.create(ID.unique(), email, password);
 
       // Step 2: Log the user in immediately after successful account creation
-      await login(email, password);
+      const loggedInUser = await login(email, password);
 
       // Step 3: Update the user's profile with their full name and role
       await account.updateName(fullName); // Update user's full name

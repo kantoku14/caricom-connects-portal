@@ -54,19 +54,8 @@ export const Login = () => {
 
   // Handle form submission for login with debounce to prevent rapid multiple submissions
   const onSubmit = debounce(async (data) => {
-    if (isSessionActive) {
-      toast({
-        title: 'Active session',
-        description: 'Please log out before logging into a new account.',
-        status: 'error',
-        duration: 5000,
-        isClosable: true,
-      });
-      return;
-    }
-
     try {
-      const loggedInUser = await login(data.email, data.password); // Log the user in
+      const loggedInUser = await login(data.email, data.password); // Now login returns the User object
       const userName = loggedInUser?.name || 'User'; // Safely get the user's name or use "User" as a fallback
       toast({
         title: 'Login Successful',
@@ -76,24 +65,31 @@ export const Login = () => {
         isClosable: true,
       });
       reset();
-    } catch (error) {
-      if (error.message.includes('Rate limit')) {
-        toast({
-          title: 'Too Many Requests',
-          description:
-            'You are making too many requests. Please try again later.',
-          status: 'error',
-          duration: 5000,
-          isClosable: true,
-        });
-      } else {
-        toast({
-          title: 'Login Failed',
-          description: 'Please check your credentials and try again.',
-          status: 'error',
-          duration: 5000,
-          isClosable: true,
-        });
+    } catch (error: unknown) {
+      if (
+        typeof error === 'object' &&
+        error !== null &&
+        'message' in error &&
+        typeof (error as Error).message === 'string'
+      ) {
+        if ((error as Error).message.includes('Rate limit')) {
+          toast({
+            title: 'Too Many Requests',
+            description:
+              'You are making too many requests. Please try again later.',
+            status: 'error',
+            duration: 5000,
+            isClosable: true,
+          });
+        } else {
+          toast({
+            title: 'Login Failed',
+            description: 'Please check your credentials and try again.',
+            status: 'error',
+            duration: 5000,
+            isClosable: true,
+          });
+        }
       }
       console.error('Error during login:', error);
     }
@@ -119,10 +115,10 @@ export const Login = () => {
       </Modal>
 
       {/* Login Form */}
-      <form onSubmit={handleSubmit(onSubmit)} disabled={isSessionActive}>
+      <form onSubmit={handleSubmit(onSubmit)}>
         <VStack spacing={4}>
           {/* Email Input */}
-          <FormControl isInvalid={errors.email}>
+          <FormControl isInvalid={!!errors.email}>
             <FormLabel htmlFor="email">Email</FormLabel>
             <Input
               id="email"
@@ -133,12 +129,14 @@ export const Login = () => {
               isDisabled={isSessionActive} // Disable if session is active
             />
             <FormErrorMessage>
-              {errors.email && errors.email.message}
+              {typeof errors.email?.message === 'string'
+                ? errors.email.message
+                : null}
             </FormErrorMessage>
           </FormControl>
 
           {/* Password Input */}
-          <FormControl isInvalid={errors.password}>
+          <FormControl isInvalid={!!errors.password}>
             <FormLabel htmlFor="password">Password</FormLabel>
             <Input
               id="password"
@@ -149,7 +147,9 @@ export const Login = () => {
               isDisabled={isSessionActive} // Disable if session is active
             />
             <FormErrorMessage>
-              {errors.password && errors.password.message}
+              {typeof errors.password?.message === 'string'
+                ? errors.password.message
+                : null}
             </FormErrorMessage>
           </FormControl>
 
@@ -159,7 +159,7 @@ export const Login = () => {
             colorScheme="teal"
             isLoading={isSubmitting}
             width="full"
-            isDisabled={isSessionActive} // Disable if session is active
+            isDisabled={isSessionActive} // Disable button if session is active
           >
             Log In
           </Button>
