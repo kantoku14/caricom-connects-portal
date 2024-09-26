@@ -25,13 +25,16 @@ import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { account } from '../appwriteConfig'; // Import Appwrite config
+import { OAuthProvider, account } from '../appwriteConfig';
 import { useAuth } from '../context/AuthContext';
 
 // Validation schema using Zod
 const schema = z.object({
   fullName: z.string().min(1, { message: 'Full name is required' }),
-  email: z.string().email({ message: 'Invalid email address' }),
+  email: z
+    .string()
+    .min(1, { message: 'Email is required' })
+    .email({ message: 'Please provide a valid email address' }),
   password: z
     .string()
     .min(8, { message: 'Password must be 8+ characters' })
@@ -96,7 +99,13 @@ export const Register = () => {
     trigger('password');
   };
 
-  const onSubmit = async (data) => {
+  const onSubmit = async (data: {
+    fullName: string;
+    email: string;
+    password: string;
+    terms: boolean;
+    role: 'Buyer' | 'Seller';
+  }) => {
     if (isSessionActive) {
       toast({
         title: 'Active session',
@@ -109,7 +118,10 @@ export const Register = () => {
       return;
     }
     try {
-      await signUp(data.fullName, data.email, data.password, data.role);
+      const formattedEmail = data.email.trim().toLowerCase(); // Formatting email
+      console.log('Formatted email:', formattedEmail);
+
+      await signUp(data.fullName, formattedEmail, data.password, data.role);
       toast({
         title: 'Account created.',
         description: 'Your account was successfully created!',
@@ -139,7 +151,7 @@ export const Register = () => {
     setLoading(true);
     try {
       await account.createOAuth2Session(
-        'google', // OAuth provider
+        OAuthProvider.Google, // Using the enum instead of a string
         'http://localhost:5175/success', // Success URL
         'http://localhost:5175/failed', // Failure URL
         ['email', 'profile'] // Scopes
@@ -179,10 +191,10 @@ export const Register = () => {
       </Modal>
 
       {/* Registration form */}
-      <form onSubmit={handleSubmit(onSubmit)} disabled={isSessionActive}>
+      <form onSubmit={handleSubmit(onSubmit)}>
         <VStack spacing={4}>
           {/* Full Name Input */}
-          <FormControl isInvalid={errors.fullName}>
+          <FormControl isInvalid={!!errors.fullName}>
             <FormLabel htmlFor="fullName">Full Name</FormLabel>
             <Input
               id="fullName"
@@ -190,13 +202,11 @@ export const Register = () => {
               {...register('fullName')}
               isDisabled={isSessionActive} // Disable if session is active
             />
-            <FormErrorMessage>
-              {errors.fullName && errors.fullName.message}
-            </FormErrorMessage>
+            <FormErrorMessage>{errors.fullName?.message}</FormErrorMessage>
           </FormControl>
 
           {/* Email Input */}
-          <FormControl isInvalid={errors.email}>
+          <FormControl isInvalid={!!errors.email}>
             <FormLabel htmlFor="email">Email</FormLabel>
             <Input
               id="email"
@@ -206,13 +216,11 @@ export const Register = () => {
               autoComplete="email"
               isDisabled={isSessionActive} // Disable if session is active
             />
-            <FormErrorMessage>
-              {errors.email && errors.email.message}
-            </FormErrorMessage>
+            <FormErrorMessage>{errors.email?.message}</FormErrorMessage>
           </FormControl>
 
           {/* Password Input */}
-          <FormControl isInvalid={errors.password}>
+          <FormControl isInvalid={!!errors.password}>
             <FormLabel htmlFor="password">Password</FormLabel>
             <Tooltip label="Password must be 8+ characters, with uppercase, lowercase, number, and special character.">
               <Input
@@ -238,13 +246,11 @@ export const Register = () => {
             >
               Suggest Strong Password
             </Button>
-            <FormErrorMessage>
-              {errors.password && errors.password.message}
-            </FormErrorMessage>
+            <FormErrorMessage>{errors.password?.message}</FormErrorMessage>
           </FormControl>
 
           {/* Role Selection */}
-          <FormControl isInvalid={errors.role}>
+          <FormControl isInvalid={!!errors.role}>
             <FormLabel htmlFor="role">Role</FormLabel>
             <RadioGroup>
               <Stack direction="row">
@@ -264,13 +270,11 @@ export const Register = () => {
                 </Radio>
               </Stack>
             </RadioGroup>
-            <FormErrorMessage>
-              {errors.role && errors.role.message}
-            </FormErrorMessage>
+            <FormErrorMessage>{errors.role?.message}</FormErrorMessage>
           </FormControl>
 
           {/* Terms and Conditions */}
-          <FormControl isInvalid={errors.terms}>
+          <FormControl isInvalid={!!errors.terms}>
             <Checkbox
               {...register('terms', {
                 required: 'You must accept the terms and conditions',
@@ -279,9 +283,7 @@ export const Register = () => {
             >
               I agree to the Terms and Conditions
             </Checkbox>
-            <FormErrorMessage>
-              {errors.terms && errors.terms.message}
-            </FormErrorMessage>
+            <FormErrorMessage>{errors.terms?.message}</FormErrorMessage>
           </FormControl>
 
           {/* Submit Button */}
