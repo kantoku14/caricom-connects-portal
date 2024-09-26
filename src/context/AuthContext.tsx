@@ -1,130 +1,75 @@
-import { createContext, useContext, useState, useEffect } from 'react';
-import { account, ID } from '../appwriteConfig'; // Ensure ID is imported from Appwrite for user creation
-import { useToast } from '@chakra-ui/react'; // Importing Chakra UI's toast for notifications
+import React, {
+  createContext,
+  ReactNode,
+  useState,
+  useEffect,
+  useContext,
+} from 'react';
+import { account } from '../appwriteConfig'; // Import Appwrite's account instance
 
-// Creating an authentication context to provide authentication functions and user data across the app
-export const AuthContext = createContext();
-
-// Custom hook to access the AuthContext, simplifying usage in components
-export function useAuth() {
-  return useContext(AuthContext);
+// Define the types for your context
+interface AuthContextType {
+  user: any | null; // You can replace 'any' with a more specific type if needed
+  login: (email: string, password: string) => Promise<void>;
+  register: (email: string, password: string, name: string) => Promise<void>;
 }
 
-// AuthProvider component: Wraps around the application and provides authentication-related methods and user data
-export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null); // State to hold the currently logged-in user or null if no session exists
-  const toast = useToast(); // Chakra UI's toast for showing feedback to the user
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-  // Function to check if a session exists on app load or page refresh
-  async function checkSession() {
-    try {
-      const currentSession = await account.get(); // Get session information
-      setUser(currentSession); // If a session exists, set the user data
-      console.log('Active session found. User is logged in:', currentSession); // Log when a session is active
-    } catch (error) {
-      console.log(
-        'No active session found. User is not logged in. Error:',
-        error
-      ); // Log when no session is found
-      setUser(null); // If no session exists, clear the user state
-    }
+// Custom hook to use the AuthContext
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
   }
+  return context;
+};
 
-  // UseEffect to check session when the component (AuthProvider) mounts
+export const AuthProvider = ({ children }: { children: ReactNode }) => {
+  const [user, setUser] = useState<any | null>(null);
+
+  // Check for an active session on component mount
+  const checkSession = async () => {
+    try {
+      const currentSession = await account.get(); // Get session information from Appwrite
+      setUser(currentSession);
+      console.log('Active session found. User is logged in:', currentSession);
+    } catch (error) {
+      console.log('No active session found. Error:', error);
+      setUser(null);
+    }
+  };
+
   useEffect(() => {
-    checkSession(); // Run session check on component mount
+    checkSession(); // Check for session when component is mounted
   }, []);
 
-  // Login function: Authenticates the user using Appwrite's email/password method
-  async function login(email, password) {
+  // Login function using Appwrite's account API with createEmailPasswordSession
+  const login = async (email: string, password: string): Promise<void> => {
     try {
-      // Attempt to log in the user using email and password
-      const loggedIn = await account.createEmailPasswordSession(
-        email,
-        password
-      );
-      setUser(loggedIn); // Set the logged-in user's data to the state
-      // Show success message to the user using Chakra UI toast
-      toast({
-        title: 'Login Successful',
-        description: `Welcome back!`,
-        status: 'success',
-        duration: 5000, // Duration in milliseconds the toast will be displayed
-        isClosable: true, // User can close the toast manually
-      });
+      const session = await account.createEmailPasswordSession(email, password); // Create session
+      setUser(session);
+      console.log('User logged in:', session);
     } catch (error) {
-      // Show error message if login fails (e.g., wrong credentials)
-      toast({
-        title: 'Login Failed',
-        description: 'Invalid email or password. Please try again.',
-        status: 'error',
-        duration: 5000,
-        isClosable: true,
-      });
-      // Throw the error to be caught if needed by the calling function
-      throw error;
+      console.error('Login failed:', error);
     }
-  }
+  };
 
-  // Register function: Handles user registration, logging them in, and updating user details like name and role
-  async function register(fullName, email, password, role) {
+  // Register function using Appwrite's account API
+  const register = async (
+    email: string,
+    password: string,
+    name: string
+  ): Promise<void> => {
     try {
-      // Notify the user that the registration process has started
-      toast({
-        title: 'Registering User',
-        description: `Creating account for ${fullName}`,
-        status: 'info',
-        duration: 5000,
-        isClosable: true,
-      });
-
-      // Step 1: Create a new user account with the provided email and password
-      await account.create(ID.unique(), email, password);
-
-      // Step 2: Log the user in immediately after successful account creation
-      await login(email, password);
-
-      // Step 3: Update the user's profile with their full name and role
-      await account.updateName(fullName); // Update user's full name
-      await account.updatePrefs({ role }); // Update user's role (Buyer/Seller)
-
-      // Notify the user of successful registration and login
-      toast({
-        title: 'Registration Successful',
-        description: `Account created for ${fullName}. You are logged in as a ${role}.`,
-        status: 'success',
-        duration: 5000,
-        isClosable: true,
-      });
+      await account.create('unique()', email, password, name); // Create user account
     } catch (error) {
-      // Handle error if there's an ongoing session during registration
-      if (error.message.includes('Session in progress')) {
-        // If a session is already in progress, prompt the user to log out first
-        toast({
-          title: 'Session in Progress',
-          description: 'You are already logged in. Please log out first.',
-          status: 'warning',
-          duration: 5000,
-          isClosable: true,
-        });
-      } else {
-        // General error handling for any other registration failures
-        toast({
-          title: 'Registration Failed',
-          description: 'An error occurred. Please try again later.',
-          status: 'error',
-          duration: 5000,
-          isClosable: true,
-        });
-      }
-      // Throw the error to ensure it's caught by the calling function or logged elsewhere
-      throw error;
+      console.error('Registration failed:', error);
     }
-  }
+  };
 
-  // Providing the user state, register, login, and session check functions via AuthContext
   return (
-    <AuthContext.Provider value={{ user, register, login, checkSession }}>
+    <AuthContext.Provider value={{ user, login, register }}>
       {children}
     </AuthContext.Provider>
   );
