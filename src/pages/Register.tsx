@@ -22,11 +22,20 @@ import {
   useDisclosure,
 } from '@chakra-ui/react';
 import { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, SubmitHandler } from 'react-hook-form'; // Import SubmitHandler
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { OAuthProvider, account } from '../appwriteConfig';
 import { useAuth } from '../context/AuthContext';
+
+// Define the shape of the form data
+type RegisterFormData = {
+  fullName: string;
+  email: string;
+  password: string;
+  terms: boolean;
+  role: 'Buyer' | 'Seller';
+};
 
 // Validation schema using Zod
 const schema = z.object({
@@ -54,10 +63,9 @@ export const Register = () => {
   const [suggestedPassword, setSuggestedPassword] = useState('');
   const [loading, setLoading] = useState(false); // OAuth loading state
   const [isSessionActive, setIsSessionActive] = useState(false);
-
   const { isOpen, onOpen, onClose } = useDisclosure();
 
-  // React Hook Form setup
+  // React Hook Form setup with explicit type for form data
   const {
     handleSubmit,
     register,
@@ -65,7 +73,8 @@ export const Register = () => {
     setValue,
     trigger,
     reset,
-  } = useForm({
+  } = useForm<RegisterFormData>({
+    // Pass RegisterFormData type
     resolver: zodResolver(schema),
   });
 
@@ -99,13 +108,8 @@ export const Register = () => {
     trigger('password');
   };
 
-  const onSubmit = async (data: {
-    fullName: string;
-    email: string;
-    password: string;
-    terms: boolean;
-    role: 'Buyer' | 'Seller';
-  }) => {
+  // Use the SubmitHandler type from react-hook-form
+  const onSubmit: SubmitHandler<RegisterFormData> = async (data) => {
     if (isSessionActive) {
       toast({
         title: 'Active session',
@@ -202,7 +206,11 @@ export const Register = () => {
               {...register('fullName')}
               isDisabled={isSessionActive} // Disable if session is active
             />
-            <FormErrorMessage>{errors.fullName?.message}</FormErrorMessage>
+            <FormErrorMessage>
+              {typeof errors.fullName?.message === 'string'
+                ? errors.fullName.message
+                : null}
+            </FormErrorMessage>
           </FormControl>
 
           {/* Email Input */}
@@ -216,7 +224,11 @@ export const Register = () => {
               autoComplete="email"
               isDisabled={isSessionActive} // Disable if session is active
             />
-            <FormErrorMessage>{errors.email?.message}</FormErrorMessage>
+            <FormErrorMessage>
+              {typeof errors.email?.message === 'string'
+                ? errors.email.message
+                : null}
+            </FormErrorMessage>
           </FormControl>
 
           {/* Password Input */}
@@ -246,7 +258,11 @@ export const Register = () => {
             >
               Suggest Strong Password
             </Button>
-            <FormErrorMessage>{errors.password?.message}</FormErrorMessage>
+            <FormErrorMessage>
+              {typeof errors.password?.message === 'string'
+                ? errors.password.message
+                : null}
+            </FormErrorMessage>
           </FormControl>
 
           {/* Role Selection */}
@@ -270,7 +286,11 @@ export const Register = () => {
                 </Radio>
               </Stack>
             </RadioGroup>
-            <FormErrorMessage>{errors.role?.message}</FormErrorMessage>
+            <FormErrorMessage>
+              {typeof errors.role?.message === 'string'
+                ? errors.role.message
+                : null}
+            </FormErrorMessage>
           </FormControl>
 
           {/* Terms and Conditions */}
@@ -283,7 +303,11 @@ export const Register = () => {
             >
               I agree to the Terms and Conditions
             </Checkbox>
-            <FormErrorMessage>{errors.terms?.message}</FormErrorMessage>
+            <FormErrorMessage>
+              {typeof errors.terms?.message === 'string'
+                ? errors.terms.message
+                : null}
+            </FormErrorMessage>
           </FormControl>
 
           {/* Submit Button */}
