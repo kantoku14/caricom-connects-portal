@@ -1,5 +1,8 @@
 {
+  "parser": "@typescript-eslint/parser",
   "parserOptions": {
+    "ecmaVersion": 2020,
+    "sourceType": "module",
     "ecmaFeatures": {
       "jsx": true
     }
@@ -9,8 +12,31 @@
       "version": "detect"
     }
   },
+  "env": {
+    "browser": true,
+    "es2021": true,
+    "jest": true,  // Enables Jest global variables like 'test' and 'expect'
+    "node": true   // If you're running Node.js scripts
+  },
+  "plugins": [
+    "@typescript-eslint",  // For TypeScript linting
+    "react"
+  ],
+  "extends": [
+    "eslint:recommended",
+    "plugin:react/recommended",
+    "plugin:@typescript-eslint/recommended"  // Enables recommended rules for TypeScript
+  ],
   "rules": {
-    "react/react-in-jsx-scope": "off", // React no longer needs to be in scope in React 17+
-    "react/no-deprecated": "off"  // Turn off deprecated warnings if you're aware
-  }
+    "react/react-in-jsx-scope": "off",  // React no longer needs to be in scope in React 17+
+    "react/no-deprecated": "off",       // Turn off deprecated warnings if you're aware
+    "@typescript-eslint/no-unused-vars": ["warn", { "argsIgnorePattern": "^_" }],  // Warn on unused vars but ignore args starting with '_'
+    "no-console": "warn",  // Warn on console logs
+    "no-undef": "error"    // Catch undefined variables (e.g., test/expect in tests)
+  },
+  "ignorePatterns": [
+    "coverage/",  // Ignore coverage reports
+    "dist/",      // Ignore build files
+    "node_modules/"  // Ignore dependencies
+  ]
 }
