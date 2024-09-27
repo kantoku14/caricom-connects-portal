@@ -1,10 +1,4 @@
-import {
-  createContext,
-  useContext,
-  useState,
-  useEffect,
-  ReactNode,
-} from 'react';
+import { createContext, useContext, useState, ReactNode } from 'react';
 import { account, ID, Models } from '../appwriteConfig'; // Ensure ID and Models are imported from Appwrite
 import { useToast } from '@chakra-ui/react'; // Importing Chakra UI's toast for notifications
 
@@ -12,14 +6,14 @@ import { useToast } from '@chakra-ui/react'; // Importing Chakra UI's toast for 
 interface AuthContextProps {
   user: Models.User<Models.Preferences> | null;
   register: (
-    fullName: string,
-    email: string,
-    password: string,
-    role: string
+    _fullName: string,
+    _email: string,
+    _password: string,
+    _role: string
   ) => Promise<void>;
   login: (
-    email: string,
-    password: string
+    _email: string,
+    _password: string
   ) => Promise<Models.User<Models.Preferences>>;
   checkSession: () => Promise<void>;
 }
@@ -49,23 +43,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   async function checkSession() {
     try {
       // Step 1: Check if a session exists
-      const currentSession = await account.getSession('current'); // Get the current session information
+      const _currentSession = await account.getSession('current'); // Get the current session information
 
       // Step 2: If a session exists, fetch the user details
       const loggedInUser = await account.get(); // Get the user details
       setUser(loggedInUser); // Set the user data to the state
-
+      /* eslint-disable */
       console.log('Active session found. User is logged in:', loggedInUser); // Log when a session is active
-    } catch (error) {
+    } catch (_error) {
       console.log('No active session found. User is not logged in.');
       setUser(null); // No session means no user
     }
+    /* eslint-enable */
   }
 
   // **Login function**: Handles user login and returns the logged-in user
   async function login(
-    email: string,
-    password: string
+    _email: string,
+    _password: string
   ): Promise<Models.User<Models.Preferences>> {
     try {
       // Notify the user that the login process has started
@@ -78,7 +73,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       });
 
       // Step 1: Authenticate the user with email and password
-      await account.createEmailPasswordSession(email, password);
+      await account.createEmailPasswordSession(_email, _password);
 
       // Step 2: Fetch the logged-in user's details
       const loggedInUser = await account.get();
@@ -113,35 +108,35 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   // Register function: Handles user registration, logging them in, and updating user details like name and role
   async function register(
-    fullName: string,
-    email: string,
-    password: string,
-    role: string
+    _fullName: string,
+    _email: string,
+    _password: string,
+    _role: string
   ) {
     try {
       // Notify the user that the registration process has started
       toast({
         title: 'Registering User',
-        description: `Creating account for ${fullName}`,
+        description: `Creating account for ${_fullName}`,
         status: 'info',
         duration: 5000,
         isClosable: true,
       });
 
       // Step 1: Create a new user account with the provided email and password
-      await account.create(ID.unique(), email, password);
+      await account.create(ID.unique(), _email, _password);
 
       // Step 2: Log the user in immediately after successful account creation
-      const loggedInUser = await login(email, password);
+      const _loggedInUser = await login(_email, _password);
 
       // Step 3: Update the user's profile with their full name and role
-      await account.updateName(fullName); // Update user's full name
-      await account.updatePrefs({ role }); // Update user's role (Buyer/Seller)
+      await account.updateName(_fullName); // Update user's full name
+      await account.updatePrefs({ _role }); // Update user's role (Buyer/Seller)
 
       // Notify the user of successful registration and login
       toast({
         title: 'Registration Successful',
-        description: `Account created for ${fullName}. You are logged in as a ${role}.`,
+        description: `Account created for ${_fullName}. You are logged in as a ${_role}.`,
         status: 'success',
         duration: 5000,
         isClosable: true,
@@ -159,7 +154,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }
 
-  // Providing the user state, register, login, and session check functions via AuthContext
   return (
     <AuthContext.Provider value={{ user, register, login, checkSession }}>
       {children}

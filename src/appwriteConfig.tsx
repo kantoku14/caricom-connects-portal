@@ -1,12 +1,13 @@
 import { Client, Databases, Account, ID, Models } from 'appwrite';
 
-// Define an enum for the supported OAuth providers
+// Disable ESLint unused variable warnings for these lines, since they're used elsewhere
+/* eslint-disable no-unused-vars */
 export enum OAuthProvider {
   Google = 'google',
   Github = 'github',
   Facebook = 'facebook',
-  // Add any other providers you need here
 }
+/* eslint-enable no-unused-vars */
 
 // Appwrite client setup
 const client = new Client();
