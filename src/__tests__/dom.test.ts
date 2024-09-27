@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { screen } from '@testing-library/react';
 
 test('renders content', () => {
   document.body.innerHTML = '<div>hello world</div>';
