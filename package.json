@@ -12,7 +12,8 @@
     "lint": "eslint .",
     "format": "prettier --write 'src/**/*.{js,ts,tsx,json,css,md}'",
     "prepare": "husky install",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "preflight": "npm run format && npm run lint && npm run test && npm run build"
   },
   "dependencies": {
     "@chakra-ui/react": "^2.8.2",
@@ -21,7 +22,6 @@
     "@hookform/resolvers": "^3.9.0",
     "@sentry/react": "^8.30.0",
     "@sentry/tracing": "^7.114.0",
-    "@testing-library/react": "^16.0.1",
     "appwrite": "^15.0.0",
     "framer-motion": "^11.5.5",
     "lodash": "^4.17.21",
@@ -38,6 +38,8 @@
     "@commitlint/config-conventional": "^19.5.0",
     "@eslint/js": "^9.11.0",
     "@testing-library/jest-dom": "^6.5.0",
+    "@testing-library/react": "^16.0.1",
+    "@testing-library/user-event": "^14.5.2",
     "@types/jest": "^29.5.13",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
@@ -45,6 +47,7 @@
     "@typescript-eslint/eslint-plugin": "^8.7.0",
     "@typescript-eslint/parser": "^8.7.0",
     "@vitejs/plugin-react": "^4.3.1",
+    "dotenv": "^16.4.5",
     "eslint": "^9.11.1",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-prettier": "^5.2.1",

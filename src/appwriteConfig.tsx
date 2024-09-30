@@ -11,9 +11,14 @@ export enum OAuthProvider {
 
 // Appwrite client setup
 const client = new Client();
+
+// Use process.env instead of import.meta.env for compatibility with Jest
 client
-  .setEndpoint(import.meta.env.VITE_APPWRITE_ENDPOINT) // Load endpoint from .env
-  .setProject(import.meta.env.VITE_APPWRITE_PROJECT_ID); // Load project ID from .env
+  .setEndpoint(
+    process.env.VITE_APPWRITE_ENDPOINT ||
+      'https://default-appwrite-endpoint.com'
+  ) // Load from process.env
+  .setProject(process.env.VITE_APPWRITE_PROJECT_ID || 'default-project-id'); // Load from process.env
 
 // Exporting services
 export const account = new Account(client);

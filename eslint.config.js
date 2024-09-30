@@ -50,15 +50,14 @@ export default [
         version: "detect", // Automatically detect the React version
       },
     },
-    // Ignoring specific directories and patterns
     ignores: [
-      "**/coverage/**",  // Ignore all files in coverage directory, including nested files
-      "**/node_modules/**",  // Ignore all files in node_modules
-      "**/dist/**",  // Ignore build output directory
-      "**/build/**",  // Ignore build output directory
-      "**/public/**",  // Ignore public directory for assets
+      "**/coverage/**",  // Ignore all files in the coverage directory
+      "**/node_modules/**",  // Ignore node_modules
+      "**/dist/**",  // Ignore distribution folder
+      "**/build/**",  // Ignore build folder
+      "**/public/**",  // Ignore public folder
       ".husky/**",  // Ignore husky configuration files
-      ".vscode/**",  // Ignore Visual Studio Code settings folder
+      ".vscode/**",  // Ignore VS Code configuration
     ],
   },
 ];

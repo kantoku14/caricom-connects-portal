@@ -1,10 +1,10 @@
-import type {Config} from 'jest';
+import type { Config } from 'jest';
 
 const config: Config = {
   clearMocks: true,
   collectCoverage: true,
   coverageDirectory: 'coverage',
-  testEnvironment: 'jest-environment-jsdom', // Ensure this is correctly pointing to the installed package
+  testEnvironment: 'jest-environment-jsdom', // Correctly set up for jsdom
   verbose: true,
   transform: {
     '^.+\\.tsx?$': 'ts-jest', // Use ts-jest for TypeScript files
@@ -17,7 +17,7 @@ const config: Config = {
     '\\.(css|less|scss|sass)$': 'identity-obj-proxy', // Mock CSS imports
     '\\.(jpg|jpeg|png|gif|webp|svg)$': '<rootDir>/__mocks__/fileMock.ts', // Mock image imports
   },
-  setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'], // Custom setup for Jest
+  setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'], // Custom setup for Jest after the environment is set up
   coverageThreshold: {
     global: {
       branches: 80,
