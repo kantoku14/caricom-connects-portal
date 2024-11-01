@@ -15,12 +15,16 @@ import {
   ModalFooter,
   useDisclosure,
 } from '@chakra-ui/react';
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useAuth } from '../context/AuthContext';
-import { debounce } from 'lodash'; // Import debounce function
+import {
+  triggerLoginSuccess,
+  triggerLoginFailure,
+  triggerSessionActive,
+} from '../utils/message'; // Import predefined message triggers
 
 // Validation schema using Zod for login
 const schema = z.object({
@@ -31,8 +35,8 @@ const schema = z.object({
 export const Login = () => {
   const { login, user } = useAuth(); // Access login and user from AuthContext
   const toast = useToast();
-  const [isSessionActive, setIsSessionActive] = useState(false); // Track if a session is active
   const { isOpen, onOpen, onClose } = useDisclosure(); // Modal control
+  const [isSessionActive, setIsSessionActive] = useState(false); // Track if a session is active
 
   // React Hook Form setup
   const {
@@ -44,39 +48,26 @@ export const Login = () => {
     resolver: zodResolver(schema),
   });
 
-  // Check if there is an active session on page load
+  // Check for an active session on component load
   useEffect(() => {
     if (user) {
-      setIsSessionActive(true); // If user exists, session is active
-      onOpen(); // Open modal to inform the user immediately after the page loads
+      setIsSessionActive(true);
+      triggerSessionActive(toast, onOpen, user.name); // Show session active message
     }
   }, [user, onOpen]);
 
-  // Handle form submission for login with debounce to prevent rapid multiple submissions
-  const onSubmit = debounce(async (data) => {
+  // Handle form submission for login
+  const onSubmit = async (data) => {
     try {
-      const loggedInUser = await login(data.email, data.password); // Now login returns the User object
-      const userName = loggedInUser?.name || 'User'; // Safely get the user's name or use "User" as a fallback
-      toast({
-        title: 'Login Successful',
-        description: `Welcome back, ${userName}!`,
-        status: 'success',
-        duration: 5000,
-        isClosable: true,
-      });
+      const loggedInUser = await login(data.email, data.password);
+      const userName = loggedInUser?.name || 'User';
+      triggerLoginSuccess(toast, onOpen, userName); // Use predefined message trigger for successful login
       setIsSessionActive(true); // Disable form after successful login
-      onOpen(); // Show modal after login
-      reset(); // Reset form fields after successful login
+      reset(); // Reset form fields
     } catch (error) {
-      toast({
-        title: 'Login Failed',
-        description: 'Invalid email or password. Please try again.',
-        status: 'error',
-        duration: 5000,
-        isClosable: true,
-      });
+      triggerLoginFailure(toast, null); // Use predefined message trigger for login failure
     }
-  }, 300);
+  };
 
   return (
     <Box width="100%" maxW="md" mx="auto">

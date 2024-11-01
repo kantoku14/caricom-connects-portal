@@ -6,8 +6,6 @@ import { Home } from './pages/Home'; // Your Home page
 import { Login } from './pages/Login'; // Login page
 import { ChakraProvider, Box } from '@chakra-ui/react';
 import { AuthProvider } from './context/AuthContext'; // Importing AuthProvider for user authentication
-import { ExampleComponent } from './__tests__/ExampleComponent';
-import { ModelTest } from './utils/message';
 
 export const App = () => {
   return (
