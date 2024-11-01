@@ -1,162 +1,76 @@
-import { createContext, useContext, useState, ReactNode } from 'react';
-import { account, ID, Models } from '../appwriteConfig'; // Ensure ID and Models are imported from Appwrite
-import { useToast } from '@chakra-ui/react'; // Importing Chakra UI's toast for notifications
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { account } from '../appwriteConfig'; // Import Appwrite's account service
 
-// Define the user and context types
-interface AuthContextProps {
-  user: Models.User<Models.Preferences> | null;
-  register: (
-    _fullName: string,
-    _email: string,
-    _password: string,
-    _role: string
-  ) => Promise<void>;
-  login: (
-    _email: string,
-    _password: string
-  ) => Promise<Models.User<Models.Preferences>>;
+// Define types for AuthContext values
+interface AuthContextType {
+  user: any;
+  login: (email: string, password: string) => Promise<void>;
+  logout: () => Promise<void>;
   checkSession: () => Promise<void>;
 }
 
-// Creating an authentication context to provide authentication functions and user data across the app
-export const AuthContext = createContext<AuthContextProps | undefined>(
-  undefined
-);
+// Create the AuthContext with default values
+const AuthContext = createContext<AuthContextType | null>(null);
 
-// Custom hook to access the AuthContext, simplifying usage in components
-export function useAuth() {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-}
+// AuthProvider component wraps around the app and provides authentication functionality
+export const AuthProvider: React.FC = ({ children }) => {
+  const [user, setUser] = useState<any>(null); // State to hold the current authenticated user
 
-// AuthProvider component: Wraps around the application and provides authentication-related methods and user data
-export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<Models.User<Models.Preferences> | null>(
-    null
-  ); // State to hold the currently logged-in user or null if no session exists
-  const toast = useToast(); // Chakra UI's toast for showing feedback to the user
-
-  // Function to check if a session exists on app load or page refresh
-  async function checkSession() {
-    try {
-      // Step 1: Check if a session exists
-      const _currentSession = await account.getSession('current'); // Get the current session information
-
-      // Step 2: If a session exists, fetch the user details
-      const loggedInUser = await account.get(); // Get the user details
-      setUser(loggedInUser); // Set the user data to the state
-      /* eslint-disable */
-      console.log('Active session found. User is logged in:', loggedInUser); // Log when a session is active
-    } catch (_error) {
-      console.log('No active session found. User is not logged in.');
-      setUser(null); // No session means no user
-    }
-    /* eslint-enable */
-  }
-
-  // **Login function**: Handles user login and returns the logged-in user
-  async function login(
-    _email: string,
-    _password: string
-  ): Promise<Models.User<Models.Preferences>> {
-    try {
-      // Notify the user that the login process has started
-      toast({
-        title: 'Logging In',
-        description: 'Attempting to log in...',
-        status: 'info',
-        duration: 5000,
-        isClosable: true,
-      });
-
-      // Step 1: Authenticate the user with email and password
-      await account.createEmailPasswordSession(_email, _password);
-
-      // Step 2: Fetch the logged-in user's details
-      const loggedInUser = await account.get();
-
-      // Step 3: Set the user data to the state
-      setUser(loggedInUser);
-
-      // Notify the user of successful login
-      toast({
-        title: 'Login Successful',
-        description: `Welcome back, ${loggedInUser.name}!`,
-        status: 'success',
-        duration: 5000,
-        isClosable: true,
-      });
-
-      // Return the logged-in user
-      return loggedInUser;
-    } catch (error) {
-      if (error instanceof Error) {
-        toast({
-          title: 'Login Failed',
-          description: error.message,
-          status: 'error',
-          duration: 5000,
-          isClosable: true,
-        });
+  // On component mount, check if a user session exists
+  useEffect(() => {
+    const checkSession = async () => {
+      try {
+        const sessionUser = await account.get(); // Attempt to get the current user session
+        setUser(sessionUser); // If successful, set the user state
+      } catch (error) {
+        setUser(null); // If no session exists, set user to null
       }
-      throw error; // Re-throw error to handle it in the calling code
-    }
-  }
+    };
+    checkSession(); // Run checkSession on component mount
+  }, []);
 
-  // Register function: Handles user registration, logging them in, and updating user details like name and role
-  async function register(
-    _fullName: string,
-    _email: string,
-    _password: string,
-    _role: string
-  ) {
+  // Login function using email and password
+  const login = async (email: string, password: string) => {
     try {
-      // Notify the user that the registration process has started
-      toast({
-        title: 'Registering User',
-        description: `Creating account for ${_fullName}`,
-        status: 'info',
-        duration: 5000,
-        isClosable: true,
-      });
-
-      // Step 1: Create a new user account with the provided email and password
-      await account.create(ID.unique(), _email, _password);
-
-      // Step 2: Log the user in immediately after successful account creation
-      const _loggedInUser = await login(_email, _password);
-
-      // Step 3: Update the user's profile with their full name and role
-      await account.updateName(_fullName); // Update user's full name
-      await account.updatePrefs({ _role }); // Update user's role (Buyer/Seller)
-
-      // Notify the user of successful registration and login
-      toast({
-        title: 'Registration Successful',
-        description: `Account created for ${_fullName}. You are logged in as a ${_role}.`,
-        status: 'success',
-        duration: 5000,
-        isClosable: true,
-      });
+      await account.createEmailSession(email, password); // Create a session with email and password
+      const sessionUser = await account.get(); // Fetch the user data after login
+      setUser(sessionUser); // Set the user state
     } catch (error) {
-      if (error instanceof Error) {
-        toast({
-          title: 'Registration Failed',
-          description: error.message,
-          status: 'error',
-          duration: 5000,
-          isClosable: true,
-        });
-      }
+      throw new Error('Login failed'); // Handle login errors
     }
-  }
+  };
 
+  // Logout function to clear the user session
+  const logout = async () => {
+    try {
+      await account.deleteSession('current'); // Delete the current session
+      setUser(null); // Clear the user state
+    } catch (error) {
+      throw new Error('Logout failed'); // Handle logout errors
+    }
+  };
+
+  // Check session function to verify if a session exists and set the user accordingly
+  const checkSession = async () => {
+    try {
+      const sessionUser = await account.get(); // Try to get current user session
+      setUser(sessionUser); // Update user state if session exists
+    } catch (error) {
+      setUser(null); // Set user to null if session does not exist
+    }
+  };
+
+  // Provide context value to children components
   return (
-    <AuthContext.Provider value={{ user, register, login, checkSession }}>
+    <AuthContext.Provider value={{ user, login, logout, checkSession }}>
       {children}
     </AuthContext.Provider>
   );
+};
+
+// Custom hook to access AuthContext values in other components
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) throw new Error('useAuth must be used within an AuthProvider');
+  return context;
 };
