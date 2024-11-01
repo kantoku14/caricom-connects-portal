@@ -1,15 +1,11 @@
 import {
   Button,
-  Checkbox,
   FormControl,
   FormLabel,
-  Heading,
-  HStack,
   Input,
-  Link,
-  Stack,
-  Text,
+  Box,
   VStack,
+  FormErrorMessage,
   useToast,
   Modal,
   ModalOverlay,
@@ -18,7 +14,6 @@ import {
   ModalBody,
   ModalFooter,
   useDisclosure,
-  FormErrorMessage,
 } from '@chakra-ui/react';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -31,10 +26,7 @@ import {
   triggerLoginFailure,
   triggerSessionActive,
 } from '../utils/message';
-import { GoogleIcon } from '../components/ProviderIcons'; // Use Google icon for the button
-import { LogoIcon } from '../components/Logo'; // Logo component for header
 
-// Validation schema using Zod for login
 const schema = z.object({
   email: z.string().email({ message: 'Invalid email address' }),
   password: z.string().min(8, { message: 'Password must be 8+ characters' }),
@@ -47,7 +39,6 @@ export const Login = () => {
   const [isSessionActive, setIsSessionActive] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // React Hook Form setup
   const {
     handleSubmit,
     register,
@@ -57,15 +48,12 @@ export const Login = () => {
     resolver: zodResolver(schema),
   });
 
-  // Check for an active session on component load or after login
   useEffect(() => {
     const verifySession = async () => {
       const sessionUser = user || (await checkSession());
       if (sessionUser) {
         setIsSessionActive(true);
         triggerSessionActive(toast, onOpen, sessionUser.name);
-
-        // Fetch user locale information
         try {
           const userLocale = await locale.get();
           console.log("User's Locale Information:", userLocale);
@@ -77,11 +65,9 @@ export const Login = () => {
         }
       }
     };
-
     verifySession();
   }, [user, checkSession, onOpen, toast]);
 
-  // Handle form submission for email/password login
   const onSubmit = async (data) => {
     try {
       const loggedInUser = await login(data.email, data.password);
@@ -94,7 +80,6 @@ export const Login = () => {
     }
   };
 
-  // Handle Google login
   const handleGoogleLogin = async () => {
     setLoading(true);
     try {
@@ -117,36 +102,23 @@ export const Login = () => {
   };
 
   return (
-    <Stack spacing="8" maxWidth="md" mx="auto" py="12" px="6">
-      <Stack align="center">
-        <LogoIcon />
-        <Heading size="md" textAlign="center">
-          Join the CARICOM Connects Network
-        </Heading>
-        <Text fontSize="md" color="gray.600" textAlign="center">
-          This portal is the place to unite, trade, and share knowledge across
-          the Caribbean.
-        </Text>
-      </Stack>
-
-      <VStack
-        as="form"
-        onSubmit={handleSubmit(onSubmit)}
-        spacing="6"
-        autoComplete="on"
-      >
-        <Stack spacing="5" width="full">
+    <Box width="100%" maxW="md" mx="auto">
+      <form onSubmit={handleSubmit(onSubmit)} autoComplete="on" method="post">
+        <VStack spacing={4}>
           <FormControl isInvalid={!!errors.email} isDisabled={isSessionActive}>
-            <FormLabel htmlFor="email">Email</FormLabel>
+            <FormLabel htmlFor="email">Email Address</FormLabel>
             <Input
               id="email"
+              name="email"
               type="email"
               placeholder="Enter your email"
               autoComplete="username"
               {...register('email')}
               isDisabled={isSessionActive}
             />
-            <FormErrorMessage>{errors.email?.message}</FormErrorMessage>
+            <FormErrorMessage>
+              {errors.email && errors.email.message}
+            </FormErrorMessage>
           </FormControl>
 
           <FormControl
@@ -156,53 +128,47 @@ export const Login = () => {
             <FormLabel htmlFor="password">Password</FormLabel>
             <Input
               id="password"
+              name="password"
               type="password"
               placeholder="Enter your password"
               autoComplete="current-password"
               {...register('password')}
               isDisabled={isSessionActive}
             />
-            <FormErrorMessage>{errors.password?.message}</FormErrorMessage>
+            <FormErrorMessage>
+              {errors.password && errors.password.message}
+            </FormErrorMessage>
           </FormControl>
-        </Stack>
 
-        <HStack justify="space-between" width="full">
-          <Checkbox defaultChecked>Remember me</Checkbox>
-          <Link color="teal.500" fontSize="sm">
-            Forgot password?
-          </Link>
-        </HStack>
-
-        <Stack spacing="4" width="full">
           <Button
             type="submit"
             colorScheme="teal"
             isLoading={isSubmitting}
-            isDisabled={isSessionActive}
             width="full"
+            isDisabled={isSessionActive}
           >
             Log In
           </Button>
+
           <Button
+            mt={4}
+            colorScheme="teal"
             variant="outline"
-            leftIcon={<GoogleIcon />}
             onClick={handleGoogleLogin}
             isLoading={loading}
-            isDisabled={isSessionActive}
             width="full"
+            isDisabled={isSessionActive}
           >
             Sign in with Google
           </Button>
-        </Stack>
-      </VStack>
+        </VStack>
+      </form>
 
       <Modal isOpen={isOpen} onClose={onClose}>
         <ModalOverlay />
         <ModalContent>
           <ModalHeader>Active Session Detected</ModalHeader>
-          <ModalBody>
-            {`You are currently logged in as ${user?.name}. Please log out first before you continue.`}
-          </ModalBody>
+          <ModalBody>{`You are currently logged in as ${user?.name}. Please log out first before you continue.`}</ModalBody>
           <ModalFooter>
             <Button colorScheme="teal" onClick={onClose}>
               Close
@@ -210,6 +176,6 @@ export const Login = () => {
           </ModalFooter>
         </ModalContent>
       </Modal>
-    </Stack>
+    </Box>
   );
 };
