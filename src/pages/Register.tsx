@@ -1,4 +1,3 @@
-//Migrate local development environment to EC2 instance
 import {
   Button,
   FormControl,
@@ -8,7 +7,6 @@ import {
   VStack,
   FormErrorMessage,
   Checkbox,
-  useToast,
   Tooltip,
   RadioGroup,
   Stack,
@@ -21,6 +19,7 @@ import {
   ModalBody,
   ModalFooter,
   useDisclosure,
+  useToast,
 } from '@chakra-ui/react';
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
@@ -28,6 +27,12 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { account } from '../appwriteConfig'; // Import Appwrite config
 import { useAuth } from '../context/AuthContext';
+import {
+  triggerFormSubmissionSuccess,
+  triggerFormSubmissionError,
+  triggerSessionActive,
+  triggerSessionInactive,
+} from '../utils/message'; // Import predefined triggers
 
 // Validation schema using Zod
 const schema = z.object({
@@ -73,11 +78,12 @@ export const Register = () => {
       const currentSession = await account.get(); // Check if the user is logged in
       if (currentSession) {
         setIsSessionActive(true);
-        onOpen(); // Open the modal to inform the user
+        triggerSessionActive(toast, onOpen, currentSession.name); // Using predefined message trigger for active session
       }
     } catch (error) {
-      console.error('No Active User Session:', error); // Log the error for debugging
+      console.error('No Active User Session:', error);
       setIsSessionActive(false);
+      triggerSessionInactive(toast, null); // Using predefined message trigger for inactive session
     }
   };
 
@@ -99,40 +105,17 @@ export const Register = () => {
 
   const onSubmit = async (data) => {
     if (isSessionActive) {
-      toast({
-        title: 'Active session',
-        description: 'Please log out before registering a new account.',
-        status: 'error',
-        duration: 5000,
-        isClosable: true,
-        colorScheme: 'teal',
-      });
+      triggerSessionActive(toast, onOpen, data.fullName); // Notify if user is already logged in
       return;
     }
     try {
       await signUp(data.fullName, data.email, data.password, data.role);
-      toast({
-        title: 'Account created.',
-        description: 'Your account was successfully created!',
-        status: 'success',
-        duration: 5000,
-        isClosable: true,
-        colorScheme: 'teal',
-      });
+      triggerFormSubmissionSuccess(toast, null); // Notify successful registration
       reset();
-
-      // Immediately check session after successful registration
-      await checkSession();
+      await checkSession(); // Immediately check session after successful registration
     } catch (error) {
       console.error('Error creating account:', error);
-      toast({
-        title: 'Error creating account.',
-        description: 'Please try again later.',
-        status: 'error',
-        duration: 5000,
-        isClosable: true,
-        colorScheme: 'teal',
-      });
+      triggerFormSubmissionError(toast, null); // Notify registration error
     }
   };
 
@@ -148,13 +131,7 @@ export const Register = () => {
       await checkSession(); // Check session after Google login
     } catch (error) {
       console.error('OAuth Login Error:', error);
-      toast({
-        title: 'Login Failed',
-        description: 'Unable to log in with Google. Please try again later.',
-        status: 'error',
-        duration: 5000,
-        isClosable: true,
-      });
+      triggerSessionInactive(toast, null); // Notify OAuth failure
     } finally {
       setLoading(false);
     }
@@ -182,21 +159,19 @@ export const Register = () => {
       {/* Registration form */}
       <form onSubmit={handleSubmit(onSubmit)} disabled={isSessionActive}>
         <VStack spacing={4}>
-          {/* Full Name Input */}
           <FormControl isInvalid={errors.fullName}>
             <FormLabel htmlFor="fullName">Full Name</FormLabel>
             <Input
               id="fullName"
               placeholder="Enter your full name"
               {...register('fullName')}
-              isDisabled={isSessionActive} // Disable if session is active
+              isDisabled={isSessionActive}
             />
             <FormErrorMessage>
               {errors.fullName && errors.fullName.message}
             </FormErrorMessage>
           </FormControl>
 
-          {/* Email Input */}
           <FormControl isInvalid={errors.email}>
             <FormLabel htmlFor="email">Email</FormLabel>
             <Input
@@ -205,14 +180,13 @@ export const Register = () => {
               placeholder="Enter your email"
               {...register('email')}
               autoComplete="email"
-              isDisabled={isSessionActive} // Disable if session is active
+              isDisabled={isSessionActive}
             />
             <FormErrorMessage>
               {errors.email && errors.email.message}
             </FormErrorMessage>
           </FormControl>
 
-          {/* Password Input */}
           <FormControl isInvalid={errors.password}>
             <FormLabel htmlFor="password">Password</FormLabel>
             <Tooltip label="Password must be 8+ characters, with uppercase, lowercase, number, and special character.">
@@ -222,7 +196,7 @@ export const Register = () => {
                 placeholder="Enter your password"
                 {...register('password')}
                 autoComplete="new-password"
-                isDisabled={isSessionActive} // Disable if session is active
+                isDisabled={isSessionActive}
               />
             </Tooltip>
             {suggestedPassword && (
@@ -235,7 +209,7 @@ export const Register = () => {
               size="sm"
               onClick={generatePassword}
               colorScheme="teal"
-              isDisabled={isSessionActive} // Disable if session is active
+              isDisabled={isSessionActive}
             >
               Suggest Strong Password
             </Button>
@@ -244,7 +218,6 @@ export const Register = () => {
             </FormErrorMessage>
           </FormControl>
 
-          {/* Role Selection */}
           <FormControl isInvalid={errors.role}>
             <FormLabel htmlFor="role">Role</FormLabel>
             <RadioGroup>
@@ -270,14 +243,8 @@ export const Register = () => {
             </FormErrorMessage>
           </FormControl>
 
-          {/* Terms and Conditions */}
           <FormControl isInvalid={errors.terms}>
-            <Checkbox
-              {...register('terms', {
-                required: 'You must accept the terms and conditions',
-              })}
-              isDisabled={isSessionActive} // Disable if session is active
-            >
+            <Checkbox {...register('terms')} isDisabled={isSessionActive}>
               I agree to the Terms and Conditions
             </Checkbox>
             <FormErrorMessage>
@@ -285,18 +252,16 @@ export const Register = () => {
             </FormErrorMessage>
           </FormControl>
 
-          {/* Submit Button */}
           <Button
             type="submit"
             colorScheme="teal"
             isLoading={isSubmitting}
             width="full"
-            isDisabled={isSessionActive} // Disable if session is active
+            isDisabled={isSessionActive}
           >
             Sign Up
           </Button>
 
-          {/* Google OAuth Button */}
           <Button
             mt={4}
             colorScheme="teal"
@@ -304,7 +269,7 @@ export const Register = () => {
             isLoading={loading}
             onClick={handleGoogleLogin}
             width="full"
-            isDisabled={isSessionActive} // Disable if session is active
+            isDisabled={isSessionActive}
           >
             Sign in with Google
           </Button>
