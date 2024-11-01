@@ -17,15 +17,6 @@ export const App = () => {
               {/* Home Route */}
               <Route path="/" element={<Home />} />
 
-              {/* TEST CODE Route */}
-              <Route path="/test-code" element={<ExampleComponent />} />
-
-              {/* Model TEST Route */}
-              <Route path="/model-test" element={<ModelTest />} />
-
-              {/* Register Route */}
-              <Route path="/register" element={<Register />} />
-
               {/* Login Route */}
               <Route path="/login" element={<Login />} />
 
