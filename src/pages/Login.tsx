@@ -1,11 +1,15 @@
 import {
   Button,
+  Checkbox,
   FormControl,
   FormLabel,
+  Heading,
+  HStack,
   Input,
-  Box,
+  Link,
+  Stack,
+  Text,
   VStack,
-  FormErrorMessage,
   useToast,
   Modal,
   ModalOverlay,
@@ -14,6 +18,7 @@ import {
   ModalBody,
   ModalFooter,
   useDisclosure,
+  FormErrorMessage,
 } from '@chakra-ui/react';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -26,6 +31,8 @@ import {
   triggerLoginFailure,
   triggerSessionActive,
 } from '../utils/message';
+import { GoogleIcon } from '../components/ProviderIcons'; // Use Google icon for the button
+import { LogoIcon } from '../components/Logo'; // Logo component for header
 
 // Validation schema using Zod for login
 const schema = z.object({
@@ -110,23 +117,36 @@ export const Login = () => {
   };
 
   return (
-    <Box width="100%" maxW="md" mx="auto">
-      <form onSubmit={handleSubmit(onSubmit)} autoComplete="on" method="post">
-        <VStack spacing={4}>
+    <Stack spacing="8" maxWidth="md" mx="auto" py="12" px="6">
+      <Stack align="center">
+        <LogoIcon />
+        <Heading size="md" textAlign="center">
+          Join the CARICOM Connects Network
+        </Heading>
+        <Text fontSize="md" color="gray.600" textAlign="center">
+          This portal is the place to unite, trade, and share knowledge across
+          the Caribbean.
+        </Text>
+      </Stack>
+
+      <VStack
+        as="form"
+        onSubmit={handleSubmit(onSubmit)}
+        spacing="6"
+        autoComplete="on"
+      >
+        <Stack spacing="5" width="full">
           <FormControl isInvalid={!!errors.email} isDisabled={isSessionActive}>
-            <FormLabel htmlFor="email">Email Address</FormLabel>
+            <FormLabel htmlFor="email">Email</FormLabel>
             <Input
               id="email"
-              name="email"
               type="email"
               placeholder="Enter your email"
               autoComplete="username"
               {...register('email')}
               isDisabled={isSessionActive}
             />
-            <FormErrorMessage>
-              {errors.email && errors.email.message}
-            </FormErrorMessage>
+            <FormErrorMessage>{errors.email?.message}</FormErrorMessage>
           </FormControl>
 
           <FormControl
@@ -136,43 +156,46 @@ export const Login = () => {
             <FormLabel htmlFor="password">Password</FormLabel>
             <Input
               id="password"
-              name="password"
               type="password"
               placeholder="Enter your password"
               autoComplete="current-password"
               {...register('password')}
               isDisabled={isSessionActive}
             />
-            <FormErrorMessage>
-              {errors.password && errors.password.message}
-            </FormErrorMessage>
+            <FormErrorMessage>{errors.password?.message}</FormErrorMessage>
           </FormControl>
+        </Stack>
 
+        <HStack justify="space-between" width="full">
+          <Checkbox defaultChecked>Remember me</Checkbox>
+          <Link color="teal.500" fontSize="sm">
+            Forgot password?
+          </Link>
+        </HStack>
+
+        <Stack spacing="4" width="full">
           <Button
             type="submit"
             colorScheme="teal"
             isLoading={isSubmitting}
-            width="full"
             isDisabled={isSessionActive}
+            width="full"
           >
             Log In
           </Button>
-
           <Button
-            mt={4}
-            colorScheme="teal"
             variant="outline"
+            leftIcon={<GoogleIcon />}
             onClick={handleGoogleLogin}
             isLoading={loading}
-            width="full"
             isDisabled={isSessionActive}
+            width="full"
           >
             Sign in with Google
           </Button>
-        </VStack>
-      </form>
+        </Stack>
+      </VStack>
 
-      {/* Modal to inform user about active session */}
       <Modal isOpen={isOpen} onClose={onClose}>
         <ModalOverlay />
         <ModalContent>
@@ -187,6 +210,6 @@ export const Login = () => {
           </ModalFooter>
         </ModalContent>
       </Modal>
-    </Box>
+    </Stack>
   );
 };
