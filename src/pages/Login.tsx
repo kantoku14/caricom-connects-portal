@@ -24,7 +24,7 @@ import {
   triggerLoginSuccess,
   triggerLoginFailure,
   triggerSessionActive,
-} from '../utils/message';
+} from '../utils/message'; // Import predefined message triggers
 
 // Validation schema using Zod for login
 const schema = z.object({
@@ -76,14 +76,17 @@ export const Login = () => {
 
   return (
     <Box width="100%" maxW="md" mx="auto">
-      <form onSubmit={handleSubmit(onSubmit)}>
+      {/* Add autoComplete="on" and method="post" to the form */}
+      <form onSubmit={handleSubmit(onSubmit)} autoComplete="on" method="post">
         <VStack spacing={4}>
           <FormControl isInvalid={!!errors.email} isDisabled={isSessionActive}>
             <FormLabel htmlFor="email">Email Address</FormLabel>
             <Input
               id="email"
+              name="email" // Explicitly define name attribute for email
               type="email"
               placeholder="Enter your email"
+              autoComplete="username" // Set autoComplete to "username" for email field
               {...register('email')}
               isDisabled={isSessionActive} // Disable if session is active
             />
@@ -99,8 +102,10 @@ export const Login = () => {
             <FormLabel htmlFor="password">Password</FormLabel>
             <Input
               id="password"
+              name="password" // Explicitly define name attribute for password
               type="password"
               placeholder="Enter your password"
+              autoComplete="current-password" // Set autoComplete to "current-password" for password field
               {...register('password')}
               isDisabled={isSessionActive} // Disable if session is active
             />
