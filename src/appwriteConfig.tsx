@@ -1,22 +1,23 @@
-import { Client, Databases, Account, ID, Models } from 'appwrite';
+import { Client, Databases, Account, ID, Locale, Models } from 'appwrite';
 
-// OAuth providers enumeration, if needed for login functionality
+// Enumeration for OAuth providers if needed in the login flow
 export enum OAuthProvider {
   Google = 'google',
   Github = 'github',
   Facebook = 'facebook',
 }
 
-// Initialize Appwrite client
+// Initialize the Appwrite client
 const client = new Client();
 
-// Set endpoint and project ID from environment variables
+// Configure client endpoint and project ID using environment variables
 client
-  .setEndpoint(import.meta.env.VITE_APPWRITE_ENDPOINT) // Endpoint from .env
+  .setEndpoint(import.meta.env.VITE_APPWRITE_ENDPOINT) // API Endpoint from .env
   .setProject(import.meta.env.VITE_APPWRITE_PROJECT_ID); // Project ID from .env
 
-// Exporting services
-export const account = new Account(client);
-export const databases = new Databases(client);
-export { ID }; // Export ID for unique identifiers
-export type { Models }; // Export Models type if needed
+// Exporting Appwrite services for use throughout the application
+export const account = new Account(client); // Account service for user authentication
+export const databases = new Databases(client); // Database service for data storage and retrieval
+export const locale = new Locale(client); // Locale service for location-based user information
+export { ID }; // Export ID for document creation and unique identifiers
+export type { Models }; // Export Models type if needed in type definitions
