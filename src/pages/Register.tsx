@@ -11,7 +11,6 @@ import {
   RadioGroup,
   Stack,
   Radio,
-  Text,
   Modal,
   ModalOverlay,
   ModalContent,
@@ -54,7 +53,6 @@ const schema = z.object({
 export const Register = () => {
   const { register: signUp } = useAuth();
   const toast = useToast();
-  const [suggestedPassword, setSuggestedPassword] = useState('');
   const [loading, setLoading] = useState(false); // OAuth loading state
   const [isSessionActive, setIsSessionActive] = useState(false);
 
@@ -65,7 +63,6 @@ export const Register = () => {
     handleSubmit,
     register,
     formState: { errors, isSubmitting },
-    setValue,
     trigger,
     reset,
   } = useForm({
@@ -90,18 +87,6 @@ export const Register = () => {
   useEffect(() => {
     checkSession(); // Check session on component mount
   }, []);
-
-  const generatePassword = () => {
-    const charset =
-      'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()';
-    let password = '';
-    for (let i = 0; i < 12; i++) {
-      password += charset[Math.floor(Math.random() * charset.length)];
-    }
-    setSuggestedPassword(password);
-    setValue('password', password, { shouldValidate: true });
-    trigger('password');
-  };
 
   const onSubmit = async (data) => {
     if (isSessionActive) {
@@ -199,20 +184,6 @@ export const Register = () => {
                 isDisabled={isSessionActive}
               />
             </Tooltip>
-            {suggestedPassword && (
-              <Text color="green.500">
-                Suggested Password: {suggestedPassword}
-              </Text>
-            )}
-            <Button
-              mt={2}
-              size="sm"
-              onClick={generatePassword}
-              colorScheme="teal"
-              isDisabled={isSessionActive}
-            >
-              Suggest Strong Password
-            </Button>
             <FormErrorMessage>
               {errors.password && errors.password.message}
             </FormErrorMessage>
