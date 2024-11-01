@@ -24,14 +24,14 @@ import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { account } from '../appwriteConfig'; // Import Appwrite config
+import { account, locale } from '../appwriteConfig';
 import { useAuth } from '../context/AuthContext';
 import {
   triggerFormSubmissionSuccess,
   triggerFormSubmissionError,
   triggerSessionActive,
   triggerSessionInactive,
-} from '../utils/message'; // Import predefined triggers
+} from '../utils/message';
 
 // Validation schema using Zod
 const schema = z.object({
@@ -55,7 +55,6 @@ export const Register = () => {
   const toast = useToast();
   const [loading, setLoading] = useState(false); // OAuth loading state
   const [isSessionActive, setIsSessionActive] = useState(false);
-
   const { isOpen, onOpen, onClose } = useDisclosure();
 
   // React Hook Form setup
@@ -63,7 +62,6 @@ export const Register = () => {
     handleSubmit,
     register,
     formState: { errors, isSubmitting },
-    trigger,
     reset,
   } = useForm({
     resolver: zodResolver(schema),
@@ -72,15 +70,15 @@ export const Register = () => {
   // Check if a session is active immediately after registration and when the component mounts
   const checkSession = async () => {
     try {
-      const currentSession = await account.get(); // Check if the user is logged in
+      const currentSession = await account.get();
       if (currentSession) {
         setIsSessionActive(true);
-        triggerSessionActive(toast, onOpen, currentSession.name); // Using predefined message trigger for active session
+        triggerSessionActive(toast, onOpen, currentSession.name);
       }
     } catch (error) {
       console.error('No Active User Session:', error);
       setIsSessionActive(false);
-      triggerSessionInactive(toast, null); // Using predefined message trigger for inactive session
+      triggerSessionInactive(toast, null);
     }
   };
 
@@ -88,19 +86,34 @@ export const Register = () => {
     checkSession(); // Check session on component mount
   }, []);
 
+  // Handle user registration and email verification
   const onSubmit = async (data) => {
     if (isSessionActive) {
-      triggerSessionActive(toast, onOpen, data.fullName); // Notify if user is already logged in
+      triggerSessionActive(toast, onOpen, data.fullName);
       return;
     }
+
     try {
+      // Register the user
       await signUp(data.fullName, data.email, data.password, data.role);
-      triggerFormSubmissionSuccess(toast, null); // Notify successful registration
+
+      // Send email verification with user locale
+      const userLocale = await locale.get();
+      await account.createVerification(`${window.location.origin}/verify`);
+
+      triggerFormSubmissionSuccess(toast, null);
+      toast({
+        title: 'Verification Email Sent',
+        description: `Please check your email to verify your account from ${userLocale.country} (IP: ${userLocale.ip}).`,
+        status: 'info',
+        duration: 5000,
+        isClosable: true,
+      });
       reset();
-      await checkSession(); // Immediately check session after successful registration
+      await checkSession();
     } catch (error) {
       console.error('Error creating account:', error);
-      triggerFormSubmissionError(toast, null); // Notify registration error
+      triggerFormSubmissionError(toast, null);
     }
   };
 
@@ -108,15 +121,14 @@ export const Register = () => {
     setLoading(true);
     try {
       await account.createOAuth2Session(
-        'google', // OAuth provider
-        'http://localhost:5175/success', // Success URL
-        'http://localhost:5175/failed', // Failure URL
-        ['email', 'profile'] // Scopes
+        'google',
+        `${window.location.origin}/success`,
+        `${window.location.origin}/failed`
       );
-      await checkSession(); // Check session after Google login
+      await checkSession();
     } catch (error) {
       console.error('OAuth Login Error:', error);
-      triggerSessionInactive(toast, null); // Notify OAuth failure
+      triggerSessionInactive(toast, null);
     } finally {
       setLoading(false);
     }
