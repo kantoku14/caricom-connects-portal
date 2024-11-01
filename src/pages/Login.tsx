@@ -20,11 +20,12 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useAuth } from '../context/AuthContext';
+import { account, locale } from '../appwriteConfig';
 import {
   triggerLoginSuccess,
   triggerLoginFailure,
   triggerSessionActive,
-} from '../utils/message'; // Import predefined message triggers
+} from '../utils/message';
 
 // Validation schema using Zod for login
 const schema = z.object({
@@ -33,10 +34,11 @@ const schema = z.object({
 });
 
 export const Login = () => {
-  const { login, user, checkSession } = useAuth(); // Access login, user, and checkSession from AuthContext
+  const { login, user, checkSession } = useAuth();
   const toast = useToast();
-  const { isOpen, onOpen, onClose } = useDisclosure(); // Modal control
-  const [isSessionActive, setIsSessionActive] = useState(false); // Track if a session is active
+  const { isOpen, onOpen, onClose } = useDisclosure();
+  const [isSessionActive, setIsSessionActive] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   // React Hook Form setup
   const {
@@ -54,41 +56,73 @@ export const Login = () => {
       const sessionUser = user || (await checkSession());
       if (sessionUser) {
         setIsSessionActive(true);
-        triggerSessionActive(toast, onOpen, sessionUser.name); // Show session active message with user's name
+        triggerSessionActive(toast, onOpen, sessionUser.name);
+
+        // Fetch user locale information
+        try {
+          const userLocale = await locale.get();
+          console.log("User's Locale Information:", userLocale);
+          console.log(
+            `User's Country: ${userLocale.country}, IP: ${userLocale.ip}`
+          );
+        } catch (error) {
+          console.error('Error fetching user locale:', error);
+        }
       }
     };
 
-    verifySession(); // Check session only once on component mount
+    verifySession();
   }, [user, checkSession, onOpen, toast]);
 
-  // Handle form submission for login
+  // Handle form submission for email/password login
   const onSubmit = async (data) => {
     try {
       const loggedInUser = await login(data.email, data.password);
       const userName = loggedInUser?.name || 'User';
-      triggerLoginSuccess(toast, onOpen, userName); // Use predefined message trigger for successful login
-      setIsSessionActive(true); // Disable form after successful login
-      reset(); // Reset form fields
+      triggerLoginSuccess(toast, onOpen, userName);
+      setIsSessionActive(true);
+      reset();
     } catch (error) {
-      triggerLoginFailure(toast, null); // Use predefined message trigger for login failure
+      triggerLoginFailure(toast, null);
+    }
+  };
+
+  // Handle Google login
+  const handleGoogleLogin = async () => {
+    setLoading(true);
+    try {
+      await account.createOAuth2Session(
+        'google',
+        `${window.location.origin}/success`,
+        `${window.location.origin}/failed`
+      );
+    } catch (error) {
+      toast({
+        title: 'Google Login Failed',
+        description: 'Unable to log in with Google. Please try again later.',
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <Box width="100%" maxW="md" mx="auto">
-      {/* Add autoComplete="on" and method="post" to the form */}
       <form onSubmit={handleSubmit(onSubmit)} autoComplete="on" method="post">
         <VStack spacing={4}>
           <FormControl isInvalid={!!errors.email} isDisabled={isSessionActive}>
             <FormLabel htmlFor="email">Email Address</FormLabel>
             <Input
               id="email"
-              name="email" // Explicitly define name attribute for email
+              name="email"
               type="email"
               placeholder="Enter your email"
-              autoComplete="username" // Set autoComplete to "username" for email field
+              autoComplete="username"
               {...register('email')}
-              isDisabled={isSessionActive} // Disable if session is active
+              isDisabled={isSessionActive}
             />
             <FormErrorMessage>
               {errors.email && errors.email.message}
@@ -102,12 +136,12 @@ export const Login = () => {
             <FormLabel htmlFor="password">Password</FormLabel>
             <Input
               id="password"
-              name="password" // Explicitly define name attribute for password
+              name="password"
               type="password"
               placeholder="Enter your password"
-              autoComplete="current-password" // Set autoComplete to "current-password" for password field
+              autoComplete="current-password"
               {...register('password')}
-              isDisabled={isSessionActive} // Disable if session is active
+              isDisabled={isSessionActive}
             />
             <FormErrorMessage>
               {errors.password && errors.password.message}
@@ -119,9 +153,21 @@ export const Login = () => {
             colorScheme="teal"
             isLoading={isSubmitting}
             width="full"
-            isDisabled={isSessionActive} // Disable if session is active
+            isDisabled={isSessionActive}
           >
             Log In
+          </Button>
+
+          <Button
+            mt={4}
+            colorScheme="teal"
+            variant="outline"
+            onClick={handleGoogleLogin}
+            isLoading={loading}
+            width="full"
+            isDisabled={isSessionActive}
+          >
+            Sign in with Google
           </Button>
         </VStack>
       </form>
