@@ -24,7 +24,7 @@ import {
   triggerLoginSuccess,
   triggerLoginFailure,
   triggerSessionActive,
-} from '../utils/message'; // Import predefined message triggers
+} from '../utils/message';
 
 // Validation schema using Zod for login
 const schema = z.object({
@@ -33,7 +33,7 @@ const schema = z.object({
 });
 
 export const Login = () => {
-  const { login, user } = useAuth(); // Access login and user from AuthContext
+  const { login, user, checkSession } = useAuth(); // Access login, user, and checkSession from AuthContext
   const toast = useToast();
   const { isOpen, onOpen, onClose } = useDisclosure(); // Modal control
   const [isSessionActive, setIsSessionActive] = useState(false); // Track if a session is active
@@ -48,13 +48,18 @@ export const Login = () => {
     resolver: zodResolver(schema),
   });
 
-  // Check for an active session on component load
+  // Check for an active session on component load or after login
   useEffect(() => {
-    if (user) {
-      setIsSessionActive(true);
-      triggerSessionActive(toast, onOpen, user.name); // Show session active message
-    }
-  }, [user, onOpen]);
+    const verifySession = async () => {
+      const sessionUser = user || (await checkSession());
+      if (sessionUser) {
+        setIsSessionActive(true);
+        triggerSessionActive(toast, onOpen, sessionUser.name); // Show session active message with user's name
+      }
+    };
+
+    verifySession(); // Check session only once on component mount
+  }, [user, checkSession, onOpen, toast]);
 
   // Handle form submission for login
   const onSubmit = async (data) => {
@@ -122,7 +127,7 @@ export const Login = () => {
         <ModalContent>
           <ModalHeader>Active Session Detected</ModalHeader>
           <ModalBody>
-            You are already logged in. Please log out first before you continue.
+            {`You are currently logged in as ${user?.name}. Please log out first before you continue.`}
           </ModalBody>
           <ModalFooter>
             <Button colorScheme="teal" onClick={onClose}>
