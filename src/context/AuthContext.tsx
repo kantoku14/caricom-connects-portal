@@ -1,76 +1,175 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { account } from '../appwriteConfig'; // Import Appwrite's account service
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  ReactNode,
+} from 'react';
+import { account, ID, Models } from '../appwriteConfig';
+import { useToast } from '@chakra-ui/react';
+import {
+  triggerLoginSuccess,
+  triggerLoginFailure,
+  triggerSessionInactive,
+} from '../utils/message'; // Import trigger functions from message.ts
 
-// Define types for AuthContext values
-interface AuthContextType {
-  user: any;
-  login: (email: string, password: string) => Promise<void>;
+// Define the context properties, adding isAuthenticated to track login state
+interface AuthContextProps {
+  user: Models.User<Models.Preferences> | null;
+  isAuthenticated: boolean;
+  register: (
+    fullName: string,
+    email: string,
+    password: string,
+    role: string
+  ) => Promise<void>;
+  login: (
+    email: string,
+    password: string
+  ) => Promise<Models.User<Models.Preferences>>;
   logout: () => Promise<void>;
   checkSession: () => Promise<void>;
 }
 
-// Create the AuthContext with default values
-const AuthContext = createContext<AuthContextType | null>(null);
+// Create AuthContext
+export const AuthContext = createContext<AuthContextProps | undefined>(
+  undefined
+);
 
-// AuthProvider component wraps around the app and provides authentication functionality
-export const AuthProvider: React.FC = ({ children }) => {
-  const [user, setUser] = useState<any>(null); // State to hold the current authenticated user
+// Custom hook to access AuthContext
+export function useAuth() {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+}
 
-  // On component mount, check if a user session exists
+// Provider component for managing authentication state
+export const AuthProvider = ({ children }: { children: ReactNode }) => {
+  const [user, setUser] = useState<Models.User<Models.Preferences> | null>(
+    null
+  );
+  const [isAuthenticated, setIsAuthenticated] = useState(false); // Tracks authentication status
+  const toast = useToast();
+
+  // Check for an active session on component mount
   useEffect(() => {
-    const checkSession = async () => {
-      try {
-        const sessionUser = await account.get(); // Attempt to get the current user session
-        setUser(sessionUser); // If successful, set the user state
-      } catch (error) {
-        setUser(null); // If no session exists, set user to null
-      }
-    };
-    checkSession(); // Run checkSession on component mount
+    checkSession();
   }, []);
 
-  // Login function using email and password
-  const login = async (email: string, password: string) => {
+  /**
+   * Checks if a session exists and sets the user and isAuthenticated state accordingly.
+   */
+  async function checkSession() {
     try {
-      await account.createEmailSession(email, password); // Create a session with email and password
-      const sessionUser = await account.get(); // Fetch the user data after login
-      setUser(sessionUser); // Set the user state
+      const currentSession = await account.getSession('current');
+      const loggedInUser = await account.get();
+      setUser(loggedInUser);
+      setIsAuthenticated(true);
+      console.log('Active session found. User is logged in:', loggedInUser);
     } catch (error) {
-      throw new Error('Login failed'); // Handle login errors
+      console.log('No active session found.');
+      setUser(null);
+      setIsAuthenticated(false);
     }
-  };
+  }
 
-  // Logout function to clear the user session
-  const logout = async () => {
+  /**
+   * Handles user login, sets session state, and triggers success/failure messages.
+   */
+  async function login(
+    email: string,
+    password: string
+  ): Promise<Models.User<Models.Preferences>> {
     try {
-      await account.deleteSession('current'); // Delete the current session
-      setUser(null); // Clear the user state
-    } catch (error) {
-      throw new Error('Logout failed'); // Handle logout errors
-    }
-  };
+      toast({
+        title: 'Logging In',
+        description: 'Attempting to log in...',
+        status: 'info',
+        duration: 5000,
+        isClosable: true,
+      });
 
-  // Check session function to verify if a session exists and set the user accordingly
-  const checkSession = async () => {
+      await account.createEmailPasswordSession(email, password); // Authenticates user
+      const loggedInUser = await account.get(); // Gets user details
+      setUser(loggedInUser);
+      setIsAuthenticated(true);
+
+      triggerLoginSuccess(toast, null, loggedInUser.name); // Notify success
+      return loggedInUser;
+    } catch (error) {
+      triggerLoginFailure(toast, null); // Notify failure
+      throw error;
+    }
+  }
+
+  /**
+   * Handles user logout, clears session, and triggers session inactive notification.
+   */
+  async function logout() {
     try {
-      const sessionUser = await account.get(); // Try to get current user session
-      setUser(sessionUser); // Update user state if session exists
-    } catch (error) {
-      setUser(null); // Set user to null if session does not exist
-    }
-  };
+      await account.deleteSession('current'); // Ends the current session
+      setUser(null);
+      setIsAuthenticated(false);
 
-  // Provide context value to children components
+      triggerSessionInactive(toast, null); // Notify user of session inactive
+
+      // Clear any locally stored user data if "Remember Me" is implemented
+      localStorage.removeItem('user');
+    } catch (error) {
+      console.error('Logout failed:', error); // Log any errors
+    }
+  }
+
+  /**
+   * Handles new user registration and logs them in.
+   */
+  async function register(
+    fullName: string,
+    email: string,
+    password: string,
+    role: string
+  ) {
+    try {
+      toast({
+        title: 'Registering User',
+        description: `Creating account for ${fullName}`,
+        status: 'info',
+        duration: 5000,
+        isClosable: true,
+      });
+
+      await account.create(ID.unique(), email, password); // Register user
+      await login(email, password); // Auto-login after registration
+
+      await account.updateName(fullName); // Set user's full name
+      await account.updatePrefs({ role }); // Set user's role
+
+      toast({
+        title: 'Registration Successful',
+        description: `Account created for ${fullName}. You are logged in as a ${role}.`,
+        status: 'success',
+        duration: 5000,
+        isClosable: true,
+      });
+    } catch (error) {
+      toast({
+        title: 'Registration Failed',
+        description:
+          error instanceof Error ? error.message : 'An error occurred',
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      });
+    }
+  }
+
   return (
-    <AuthContext.Provider value={{ user, login, logout, checkSession }}>
+    <AuthContext.Provider
+      value={{ user, isAuthenticated, register, login, logout, checkSession }}
+    >
       {children}
     </AuthContext.Provider>
   );
-};
-
-// Custom hook to access AuthContext values in other components
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) throw new Error('useAuth must be used within an AuthProvider');
-  return context;
 };
