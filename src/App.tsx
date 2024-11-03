@@ -1,28 +1,70 @@
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import {
+  BrowserRouter as Router,
+  Route,
+  Routes,
+  Navigate,
+} from 'react-router-dom';
+import { ChakraProvider, Box } from '@chakra-ui/react';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import { Home } from './pages/Home';
+import { LoginWelcome } from './components/LoginWelcome';
 import { Register } from './pages/Register';
 import { Success } from './pages/Success';
 import { Failure } from './pages/Failure';
-import { Home } from './pages/Home';
-import { LoginWelcome } from './components/LoginWelcome'; // Use LoginWelcome as the login page entry point
-import { ChakraProvider, Box } from '@chakra-ui/react';
-import { AuthProvider } from './context/AuthContext';
+import { Dashboard } from './pages/Dashboard';
+import { NavBar } from './components/NavBar';
 
 export const App = () => {
   return (
     <ChakraProvider>
-      <Router>
-        <AuthProvider>
-          <Box p={4}>
+      <AuthProvider>
+        <Router>
+          <Box>
+            <NavBar />
             <Routes>
               <Route path="/" element={<Home />} />
-              <Route path="/login" element={<LoginWelcome />} /> {/* Updated */}
-              <Route path="/register" element={<Register />} />
+              <Route
+                path="/login"
+                element={
+                  <PublicRoute>
+                    <LoginWelcome />
+                  </PublicRoute>
+                }
+              />
+              <Route
+                path="/register"
+                element={
+                  <PublicRoute>
+                    <Register />
+                  </PublicRoute>
+                }
+              />
               <Route path="/success" element={<Success />} />
               <Route path="/failed" element={<Failure />} />
+              <Route
+                path="/dashboard"
+                element={
+                  <PrivateRoute>
+                    <Dashboard />
+                  </PrivateRoute>
+                }
+              />
             </Routes>
           </Box>
-        </AuthProvider>
-      </Router>
+        </Router>
+      </AuthProvider>
     </ChakraProvider>
   );
+};
+
+// Public Route Helper
+const PublicRoute = ({ children }) => {
+  const { isAuthenticated } = useAuth();
+  return isAuthenticated ? <Navigate to="/dashboard" replace /> : children;
+};
+
+// Private Route Helper
+const PrivateRoute = ({ children }) => {
+  const { isAuthenticated } = useAuth();
+  return isAuthenticated ? children : <Navigate to="/login" replace />;
 };
