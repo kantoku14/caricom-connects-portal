@@ -1,72 +1,58 @@
-import {
-  Box,
-  Flex,
-  Button,
-  Link,
-  Spacer,
-  Text,
-  useToast,
-} from '@chakra-ui/react';
+import { Box, Button, Flex, Link, Spacer, Text } from '@chakra-ui/react';
+import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { triggerSessionInactive } from '../utils/message';
-import { useNavigate } from 'react-router-dom';
 
 export const NavBar = () => {
-  const { user, logout } = useAuth();
-  const toast = useToast();
-  const navigate = useNavigate();
-
-  const handleLogout = async () => {
-    try {
-      await logout(); // Trigger the logout function
-      triggerSessionInactive(toast, null); // Show logout notification
-      navigate('/login'); // Redirect to login page after logout
-    } catch (error) {
-      console.error('Logout Error:', error);
-    }
-  };
+  const { isAuthenticated, logout } = useAuth();
+  const location = useLocation(); // Get the current route
 
   return (
-    <Box bg="teal.500" color="white" px={4} py={3} boxShadow="md">
-      <Flex alignItems="center" maxW="8xl" mx="auto">
-        {/* Logo or Home Link */}
-        <Link href="/" fontWeight="bold" fontSize="lg">
-          Caricom Connects
-        </Link>
+    <Flex as="nav" bg="teal.500" p={4} color="white" align="center">
+      <Text fontWeight="bold" fontSize="lg">
+        CaricomConnects
+      </Text>
+      <Spacer />
 
-        <Spacer />
+      {isAuthenticated ? (
+        <>
+          {/* Show Home link unless the user is on the Home page */}
+          {location.pathname !== '/' && (
+            <NavLink to="/" style={{ marginRight: '15px' }}>
+              Home
+            </NavLink>
+          )}
 
-        {/* Display user info and logout option if logged in */}
-        {user ? (
-          <>
-            <Text mr={4}>Welcome, {user.name}</Text>
-            <Button onClick={handleLogout} colorScheme="teal" variant="outline">
-              Logout
-            </Button>
-          </>
-        ) : (
-          // Display Login and Register if not logged in
-          <>
-            <Button
-              as={Link}
-              href="/login"
-              colorScheme="teal"
-              variant="ghost"
-              mr={2}
-            >
+          {/* Show Dashboard link unless the user is on the Dashboard */}
+          {location.pathname !== '/dashboard' && (
+            <NavLink to="/dashboard" style={{ marginRight: '15px' }}>
+              Dashboard
+            </NavLink>
+          )}
+
+          <Button
+            onClick={logout}
+            variant="outline"
+            color="white"
+            _hover={{ bg: 'teal.600' }}
+          >
+            Logout
+          </Button>
+        </>
+      ) : (
+        <>
+          {/* For non-authenticated users, show links to Login and Register */}
+          {location.pathname !== '/login' && (
+            <NavLink to="/login" style={{ marginRight: '15px' }}>
               Login
-            </Button>
-            <Button
-              as={Link}
-              href="/register"
-              colorScheme="teal"
-              variant="solid"
-            >
-              Register
-            </Button>
-          </>
-        )}
-      </Flex>
-    </Box>
+            </NavLink>
+          )}
+          {location.pathname !== '/register' && (
+            <NavLink to="/register" style={{ marginRight: '15px' }}>
+              Sign Up
+            </NavLink>
+          )}
+        </>
+      )}
+    </Flex>
   );
 };
