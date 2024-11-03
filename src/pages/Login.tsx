@@ -14,6 +14,7 @@ import {
   ModalBody,
   ModalFooter,
   useDisclosure,
+  Checkbox,
 } from '@chakra-ui/react';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -26,14 +27,18 @@ import {
   triggerLoginFailure,
   triggerSessionActive,
 } from '../utils/message';
+import { useNavigate } from 'react-router-dom';
 
+// Validation schema using Zod for form validation
 const schema = z.object({
   email: z.string().email({ message: 'Invalid email address' }),
   password: z.string().min(8, { message: 'Password must be 8+ characters' }),
+  rememberMe: z.boolean().optional(),
 });
 
 export const Login = () => {
   const { login, user, checkSession } = useAuth();
+  const navigate = useNavigate();
   const toast = useToast();
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [isSessionActive, setIsSessionActive] = useState(false);
@@ -44,9 +49,13 @@ export const Login = () => {
     register,
     formState: { errors, isSubmitting },
     reset,
+    watch,
   } = useForm({
     resolver: zodResolver(schema),
   });
+
+  // Watch rememberMe checkbox value
+  const rememberMe = watch('rememberMe');
 
   useEffect(() => {
     const verifySession = async () => {
@@ -68,18 +77,27 @@ export const Login = () => {
     verifySession();
   }, [user, checkSession, onOpen, toast]);
 
+  // Handle form submission for email/password login
   const onSubmit = async (data) => {
     try {
       const loggedInUser = await login(data.email, data.password);
       const userName = loggedInUser?.name || 'User';
+
+      // Store session if "Remember Me" is checked
+      if (rememberMe) {
+        localStorage.setItem('rememberMe', JSON.stringify(true));
+      }
+
       triggerLoginSuccess(toast, onOpen, userName);
       setIsSessionActive(true);
       reset();
+      navigate('/dashboard'); // Redirect to dashboard after successful login
     } catch (error) {
       triggerLoginFailure(toast, null);
     }
   };
 
+  // Handle Google OAuth login
   const handleGoogleLogin = async () => {
     setLoading(true);
     try {
@@ -105,6 +123,7 @@ export const Login = () => {
     <Box width="100%" maxW="md" mx="auto">
       <form onSubmit={handleSubmit(onSubmit)} autoComplete="on" method="post">
         <VStack spacing={4}>
+          {/* Email Input */}
           <FormControl isInvalid={!!errors.email} isDisabled={isSessionActive}>
             <FormLabel htmlFor="email">Email Address</FormLabel>
             <Input
@@ -121,6 +140,7 @@ export const Login = () => {
             </FormErrorMessage>
           </FormControl>
 
+          {/* Password Input */}
           <FormControl
             isInvalid={!!errors.password}
             isDisabled={isSessionActive}
@@ -140,6 +160,10 @@ export const Login = () => {
             </FormErrorMessage>
           </FormControl>
 
+          {/* Remember Me Checkbox */}
+          <Checkbox {...register('rememberMe')}>Remember Me</Checkbox>
+
+          {/* Submit Button */}
           <Button
             type="submit"
             colorScheme="teal"
@@ -150,6 +174,7 @@ export const Login = () => {
             Log In
           </Button>
 
+          {/* Google Login Button */}
           <Button
             mt={4}
             colorScheme="teal"
@@ -164,6 +189,7 @@ export const Login = () => {
         </VStack>
       </form>
 
+      {/* Session Active Modal */}
       <Modal isOpen={isOpen} onClose={onClose}>
         <ModalOverlay />
         <ModalContent>
