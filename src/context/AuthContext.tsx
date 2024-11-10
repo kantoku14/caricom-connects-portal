@@ -7,14 +7,13 @@ import React, {
 } from 'react';
 import { account, ID, Models } from '../appwriteConfig';
 import { useToast } from '@chakra-ui/react';
+import { useNavigate } from 'react-router-dom';
 import {
   triggerLoginSuccess,
   triggerLoginFailure,
   triggerSessionInactive,
 } from '../utils/message';
-import { useNavigate } from 'react-router-dom'; // Import for navigation
 
-// Define the context properties, adding isAuthenticated to track login state
 interface AuthContextProps {
   user: Models.User<Models.Preferences> | null;
   isAuthenticated: boolean;
@@ -32,12 +31,10 @@ interface AuthContextProps {
   checkSession: () => Promise<void>;
 }
 
-// Create AuthContext
 export const AuthContext = createContext<AuthContextProps | undefined>(
   undefined
 );
 
-// Custom hook to access AuthContext
 export function useAuth() {
   const context = useContext(AuthContext);
   if (!context) {
@@ -46,7 +43,6 @@ export function useAuth() {
   return context;
 }
 
-// Provider component for managing authentication state
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<Models.User<Models.Preferences> | null>(
     null
@@ -55,34 +51,38 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const toast = useToast();
   const navigate = useNavigate();
 
-  // Check for an active session on component mount
   useEffect(() => {
     checkSession();
   }, []);
 
-  // Checks if a session exists and if the email is verified
+  /**
+   * Checks if a user session exists.
+   * If a session exists and the user is verified, sets the user as authenticated.
+   * If the user is not verified, navigates to the email verification page.
+   */
   async function checkSession() {
     try {
       const currentSession = await account.getSession('current');
       const loggedInUser = await account.get();
 
-      // Check if the user's email is verified
       if (loggedInUser.emailVerification) {
         setUser(loggedInUser);
         setIsAuthenticated(true);
-        console.log('Active session found. User is logged in:', loggedInUser);
       } else {
+        setUser(null);
         setIsAuthenticated(false);
-        navigate('/check-email'); // Redirect to check email page if not verified
+        navigate('/check-email');
       }
     } catch (error) {
-      console.log('No active session found.');
       setUser(null);
       setIsAuthenticated(false);
     }
   }
 
-  // Handles user login and checks email verification
+  /**
+   * Authenticates the user using their email and password.
+   * Ensures the user's email is verified before granting access to protected routes.
+   */
   async function login(
     email: string,
     password: string
@@ -95,19 +95,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         duration: 5000,
         isClosable: true,
       });
-
       await account.createEmailPasswordSession(email, password);
       const loggedInUser = await account.get();
 
-      // Check if the user's email is verified
       if (loggedInUser.emailVerification) {
         setUser(loggedInUser);
         setIsAuthenticated(true);
-        triggerLoginSuccess(toast, null, loggedInUser.name); // Notify success
+        triggerLoginSuccess(toast, null, loggedInUser.name);
         return loggedInUser;
       } else {
-        setIsAuthenticated(false);
-        navigate('/check-email'); // Redirect if not verified
+        toast({
+          title: 'Email Verification Required',
+          description: 'Please verify your email to log in.',
+          status: 'warning',
+          duration: 5000,
+          isClosable: true,
+        });
         throw new Error('Email not verified');
       }
     } catch (error) {
@@ -116,21 +119,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }
 
-  // Handles user logout
+  /**
+   * Logs out the current user by ending their session.
+   */
   async function logout() {
     try {
       await account.deleteSession('current');
       setUser(null);
       setIsAuthenticated(false);
-
       triggerSessionInactive(toast, null);
-      localStorage.removeItem('user'); // Clear locally stored data if implemented
+      localStorage.removeItem('user');
     } catch (error) {
       console.error('Logout failed:', error);
     }
   }
 
-  // Handles user registration and initial login
+  /**
+   * Registers a new user, logs them in temporarily to set their name and role,
+   * sends a verification email, and then logs them out.
+   */
   async function register(
     fullName: string,
     email: string,
@@ -146,29 +153,41 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         isClosable: true,
       });
 
+      // Step 1: Create a new user account with the provided email and password
       await account.create(ID.unique(), email, password);
-      await login(email, password); // Attempt to login post-registration
 
+      // Step 2: Log the user in temporarily to set name and preferences
+      await account.createEmailPasswordSession(email, password);
+
+      // Step 3: Update the user's profile with their full name and role
       await account.updateName(fullName);
       await account.updatePrefs({ role });
 
+      // Step 4: Send verification email while user is still logged in
+      await account.createVerification(`${window.location.origin}/verify`);
+
+      // Step 5: Log the user out
+      await logout();
+
+      // Redirect to check email page
+      navigate('/check-email');
+
       toast({
         title: 'Registration Successful',
-        description: `Account created for ${fullName}. Please verify your email to proceed.`,
+        description: `Account created for ${fullName}. Please verify your email.`,
         status: 'success',
         duration: 5000,
         isClosable: true,
       });
-      navigate('/check-email'); // Redirect to check email page after registration
     } catch (error) {
       toast({
         title: 'Registration Failed',
-        description:
-          error instanceof Error ? error.message : 'An error occurred',
+        description: 'An error occurred. Please try again later.',
         status: 'error',
         duration: 5000,
         isClosable: true,
       });
+      throw error;
     }
   }
 
