@@ -6,11 +6,16 @@ export const NavBar = () => {
   const { isAuthenticated, logout } = useAuth();
   const location = useLocation(); // Get the current route
 
+  // Hide the nav bar on the home page
+  if (location.pathname === '/') {
+    return null;
+  }
+
   return (
     <Flex as="nav" bg="teal.500" p={4} color="white" align="center">
-      <Text fontWeight="bold" fontSize="lg">
-        CaricomConnects
-      </Text>
+      <Link as={NavLink} to="/" fontWeight="bold" fontSize="lg" color="white">
+        CARICOM CONNECTS
+      </Link>
       <Spacer />
 
       {isAuthenticated ? (
