@@ -1,181 +1,156 @@
 import { UseToastOptions, ToastId } from '@chakra-ui/react';
-import { locale } from '../appwriteConfig'; // Import Appwrite locale service
+import { locale } from '../appwriteConfig'; // Import locale from Appwrite config
 
 // Define the structure of each message
 export interface Message {
   title: string;
   description: string;
   status: 'info' | 'warning' | 'success' | 'error';
-  log?: boolean; // Optional: Whether to console.log the message
-  toast?: boolean; // Optional: Whether to show a toast notification
-  modal?: boolean; // Optional: Whether to show a modal
+  log?: boolean;
+  toast?: boolean;
+  modal?: boolean;
 }
+
+// Helper function to fetch user locale info
+const fetchUserLocale = async (): Promise<string> => {
+  try {
+    const userLocale = await locale.get();
+    return `${userLocale.country} (IP: ${userLocale.ip})`;
+  } catch (error) {
+    console.error('Error fetching user locale:', error);
+    return 'unknown location';
+  }
+};
 
 // Centralized messages object with grouped contexts
 export const messages = {
-  // Authentication Context
   auth: {
-    async loginSuccess(name: string): Promise<Message> {
-      const userLocale = await getUserLocale();
-      return {
-        title: `Welcome back, ${name}`,
-        description: `You have logged in successfully from ${userLocale.country} (IP: ${userLocale.ip}).`,
-        status: 'success',
-        toast: true,
-        log: true,
-      };
-    },
-
-    loginFailure(): Message {
-      return {
-        title: 'Login Failed',
-        description: 'Invalid credentials. Please try again.',
-        status: 'error',
-        toast: true,
-        log: true,
-      };
-    },
-
-    async logoutSuccess(name: string): Promise<Message> {
-      const userLocale = await getUserLocale();
-      return {
-        title: `Goodbye, ${name}`,
-        description: `You have logged out from ${userLocale.country}.`,
-        status: 'info',
-        toast: true,
-        log: true,
-      };
-    },
-
-    async sessionActive(name: string): Promise<Message> {
-      const userLocale = await getUserLocale();
-      return {
-        title: 'Session Active',
-        description: `${name} is currently logged in from ${userLocale.country} (IP: ${userLocale.ip}).`,
-        status: 'info',
-        toast: true,
-        log: true,
-      };
-    },
-
-    sessionInactive(): Message {
-      return {
-        title: 'Session Inactive',
-        description: 'No active session found. Please log in.',
-        status: 'warning',
-        toast: true,
-        log: true,
-      };
-    },
+    loginSuccess: async (name: string): Promise<Message> => ({
+      title: `Welcome back, ${name}`,
+      description: `You have logged in successfully from ${await fetchUserLocale()}.`,
+      status: 'success',
+      toast: true,
+      log: true,
+    }),
+    loginFailure: (): Message => ({
+      title: 'Login Failed',
+      description: 'Invalid credentials. Please try again.',
+      status: 'error',
+      toast: true,
+      log: true,
+    }),
+    logoutSuccess: async (name: string): Promise<Message> => ({
+      title: `Goodbye, ${name}`,
+      description: `You have logged out successfully from ${await fetchUserLocale()}.`,
+      status: 'info',
+      toast: true,
+      log: true,
+    }),
+    sessionActive: async (name: string): Promise<Message> => ({
+      title: 'Session Active',
+      description: `${name} is currently logged in from ${await fetchUserLocale()}.`,
+      status: 'info',
+      toast: true,
+      log: true,
+    }),
+    sessionInactive: (): Message => ({
+      title: 'Session Inactive',
+      description: 'No active session found. Please log in.',
+      status: 'warning',
+      toast: true,
+      log: true,
+    }),
+    verificationSuccess: (): Message => ({
+      title: 'Verification Successful',
+      description: 'Your email has been verified. You can now log in.',
+      status: 'success',
+      toast: true,
+      log: true,
+    }),
+    verificationFailure: (): Message => ({
+      title: 'Verification Failed',
+      description: 'Email verification failed. Please try again.',
+      status: 'error',
+      toast: true,
+      log: true,
+    }),
   },
-
-  // Form Validation Context
   form: {
-    invalidInput(field: string): Message {
-      return {
-        title: 'Invalid Input',
-        description: `The ${field} you entered is invalid. Please try again.`,
-        status: 'error',
-        toast: true,
-        log: true,
-      };
-    },
-
-    requiredField(field: string): Message {
-      return {
-        title: 'Required Field',
-        description: `The ${field} is required.`,
-        status: 'warning',
-        toast: true,
-        log: true,
-      };
-    },
-
-    submissionSuccess(): Message {
-      return {
-        title: 'Form Submitted',
-        description: 'Your form has been submitted successfully.',
-        status: 'success',
-        toast: true,
-        log: true,
-      };
-    },
-
-    submissionError(): Message {
-      return {
-        title: 'Submission Failed',
-        description: 'There was an error submitting your form. Please try again.',
-        status: 'error',
-        toast: true,
-        log: true,
-      };
-    },
-  },
-
-  // Profile Update Context
-  profile: {
-    updateSuccess(): Message {
-      return {
-        title: 'Profile Updated',
-        description: 'Your profile has been updated successfully.',
-        status: 'success',
-        toast: true,
-        log: true,
-      };
-    },
-
-    updateFailure(): Message {
-      return {
-        title: 'Profile Update Failed',
-        description: 'There was an error updating your profile. Please try again.',
-        status: 'error',
-        toast: true,
-        log: true,
-      };
-    },
-  },
-
-  // System Context
-  system: {
-    serverError(): Message {
-      return {
-        title: 'Server Error',
-        description: 'An unexpected error occurred. Please try again later.',
-        status: 'error',
-        modal: true,
-        log: true,
-      };
-    },
-
-    networkError(): Message {
-      return {
-        title: 'Network Error',
-        description: 'Unable to connect to the server. Please check your internet connection.',
-        status: 'error',
-        toast: true,
-        log: true,
-      };
-    },
+    submissionSuccess: async (): Promise<Message> => ({
+      title: 'Form Submitted',
+      description: `Your form has been submitted successfully from ${await fetchUserLocale()}.`,
+      status: 'success',
+      toast: true,
+      log: true,
+    }),
+    submissionError: (): Message => ({
+      title: 'Submission Failed',
+      description: 'There was an error submitting your form. Please try again.',
+      status: 'error',
+      toast: true,
+      log: true,
+    }),
   },
 };
-
-// Helper function to fetch user locale information
-async function getUserLocale() {
-  try {
-    const userLocale = await locale.get();
-    return {
-      country: userLocale.country || 'Unknown Country',
-      ip: userLocale.ip || 'Unknown IP',
-    };
-  } catch (error) {
-    console.error('Error fetching user locale:', error);
-    return { country: 'Unknown Country', ip: 'Unknown IP' };
-  }
-}
 
 // Predefined trigger functions for reusable scenarios
 type SetModalMessage = (message: Message | null) => void;
 type ToastFunction = (options: UseToastOptions) => ToastId;
+
+export const triggerFormSubmissionSuccess = async (
+  toast: ToastFunction,
+  setModalMessage: SetModalMessage | null
+) => {
+  const message = await messages.form.submissionSuccess();
+  toast(message);
+  setModalMessage && setModalMessage(message);
+};
+
+export const triggerFormSubmissionError = (
+  toast: ToastFunction,
+  setModalMessage: SetModalMessage | null
+) => {
+  const message = messages.form.submissionError();
+  toast(message);
+  setModalMessage && setModalMessage(message);
+};
+
+export const triggerVerificationSuccess = (
+  toast: ToastFunction,
+  setModalMessage: SetModalMessage | null
+) => {
+  const message = messages.auth.verificationSuccess();
+  toast(message);
+  setModalMessage && setModalMessage(message);
+};
+
+export const triggerVerificationFailure = (
+  toast: ToastFunction,
+  setModalMessage: SetModalMessage | null
+) => {
+  const message = messages.auth.verificationFailure();
+  toast(message);
+  setModalMessage && setModalMessage(message);
+};
+
+export const triggerSessionActive = async (
+  toast: ToastFunction,
+  setModalMessage: SetModalMessage | null,
+  name: string
+) => {
+  const message = await messages.auth.sessionActive(name);
+  toast(message);
+  setModalMessage && setModalMessage(message);
+};
+
+export const triggerSessionInactive = (
+  toast: ToastFunction,
+  setModalMessage: SetModalMessage | null
+) => {
+  const message = messages.auth.sessionInactive();
+  toast(message);
+  setModalMessage && setModalMessage(message);
+};
 
 export const triggerLoginSuccess = async (
   toast: ToastFunction,
@@ -202,25 +177,6 @@ export const triggerLogoutSuccess = async (
   name: string
 ) => {
   const message = await messages.auth.logoutSuccess(name);
-  toast(message);
-  setModalMessage && setModalMessage(message);
-};
-
-export const triggerSessionActive = async (
-  toast: ToastFunction,
-  setModalMessage: SetModalMessage | null,
-  name: string
-) => {
-  const message = await messages.auth.sessionActive(name);
-  toast(message);
-  setModalMessage && setModalMessage(message);
-};
-
-export const triggerSessionInactive = (
-  toast: ToastFunction,
-  setModalMessage: SetModalMessage | null
-) => {
-  const message = messages.auth.sessionInactive();
   toast(message);
   setModalMessage && setModalMessage(message);
 };
