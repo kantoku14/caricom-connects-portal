@@ -1,3 +1,5 @@
+// App.tsx
+
 import {
   BrowserRouter as Router,
   Route,
@@ -14,7 +16,8 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { NavBar } from './components/NavBar';
 import { Dashboard } from './pages/Dashboard';
 import { CheckEmail } from './pages/CheckEmail';
-import { Verify } from './pages/Verify'; // Import the Verify page component
+import { Verify } from './pages/Verify';
+import { UserProfile } from './pages/UserProfile';
 
 export const App = () => {
   return (
@@ -44,15 +47,20 @@ export const App = () => {
               <Route path="/success" element={<Success />} />
               <Route path="/failed" element={<Failure />} />
               <Route path="/check-email" element={<CheckEmail />} />
-              <Route
-                path="/verify"
-                element={<Verify />} // Route to the Verify page
-              />
+              <Route path="/verify" element={<Verify />} />
               <Route
                 path="/dashboard"
                 element={
                   <PrivateRoute>
                     <Dashboard />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/profile"
+                element={
+                  <PrivateRoute>
+                    <UserProfile />
                   </PrivateRoute>
                 }
               />
