@@ -29,6 +29,9 @@ interface AuthContextProps {
   ) => Promise<Models.User<Models.Preferences>>;
   logout: () => Promise<void>;
   checkSession: () => Promise<void>;
+  updateUserPreferences: (
+    newPreferences: Partial<Models.Preferences>
+  ) => Promise<void>;
 }
 
 export const AuthContext = createContext<AuthContextProps | undefined>(
@@ -52,35 +55,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Check for a stored user session on mount
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-      setIsAuthenticated(true);
-    } else {
-      checkSession(); // Check session if no user data stored
-    }
+    checkSession();
   }, []);
 
   async function checkSession() {
     try {
       const currentSession = await account.getSession('current');
       const loggedInUser = await account.get();
-
       if (loggedInUser.emailVerification) {
         setUser(loggedInUser);
         setIsAuthenticated(true);
-        localStorage.setItem('user', JSON.stringify(loggedInUser)); // Store user data
       } else {
         setUser(null);
         setIsAuthenticated(false);
-        localStorage.removeItem('user'); // Clear data if verification is missing
         navigate('/check-email');
       }
     } catch (error) {
       setUser(null);
       setIsAuthenticated(false);
-      localStorage.removeItem('user');
     }
   }
 
@@ -98,11 +90,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       });
       await account.createEmailPasswordSession(email, password);
       const loggedInUser = await account.get();
-
       if (loggedInUser.emailVerification) {
         setUser(loggedInUser);
         setIsAuthenticated(true);
-        localStorage.setItem('user', JSON.stringify(loggedInUser)); // Store user data
         triggerLoginSuccess(toast, null, loggedInUser.name);
         return loggedInUser;
       } else {
@@ -126,8 +116,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       await account.deleteSession('current');
       setUser(null);
       setIsAuthenticated(false);
-      localStorage.removeItem('user'); // Clear stored user data
       triggerSessionInactive(toast, null);
+      localStorage.removeItem('user');
     } catch (error) {
       console.error('Logout failed:', error);
     }
@@ -148,23 +138,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         isClosable: true,
       });
 
-      // Step 1: Create a new user account
       await account.create(ID.unique(), email, password);
 
-      // Step 2: Log in temporarily to set name and preferences
       await account.createEmailPasswordSession(email, password);
 
-      // Step 3: Update user's name and role
       await account.updateName(fullName);
       await account.updatePrefs({ role });
 
-      // Step 4: Send verification email
       await account.createVerification(`${window.location.origin}/verify`);
-
-      // Step 5: Log the user out
       await logout();
-
-      navigate('/check-email'); // Redirect to email verification page
+      navigate('/check-email');
 
       toast({
         title: 'Registration Successful',
@@ -185,9 +168,47 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }
 
+  async function updateUserPreferences(
+    newPreferences: Partial<Models.Preferences>
+  ) {
+    try {
+      const existingPrefs = user?.prefs || {};
+      const updatedPrefs = { ...existingPrefs, ...newPreferences };
+      await account.updatePrefs(updatedPrefs);
+
+      setUser((prevUser) =>
+        prevUser ? { ...prevUser, prefs: updatedPrefs } : prevUser
+      );
+
+      toast({
+        title: 'Profile Updated',
+        description: 'Your profile information has been updated successfully.',
+        status: 'success',
+        duration: 5000,
+        isClosable: true,
+      });
+    } catch (error) {
+      toast({
+        title: 'Update Failed',
+        description: 'There was an error updating your profile.',
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      });
+    }
+  }
+
   return (
     <AuthContext.Provider
-      value={{ user, isAuthenticated, register, login, logout, checkSession }}
+      value={{
+        user,
+        isAuthenticated,
+        register,
+        login,
+        logout,
+        checkSession,
+        updateUserPreferences,
+      }}
     >
       {children}
     </AuthContext.Provider>
