@@ -18,6 +18,9 @@ import { Dashboard } from './pages/Dashboard';
 import { CheckEmail } from './pages/CheckEmail';
 import { Verify } from './pages/Verify';
 import { UserProfile } from './pages/UserProfile';
+import { OrderHistoryDetails } from './pages/OrderHistory';
+import { MarketTrendsDetails } from './pages/MarketTrends';
+import { NotificationsDetails } from './pages/Notifications';
 
 export const App = () => {
   return (
@@ -61,6 +64,30 @@ export const App = () => {
                 element={
                   <PrivateRoute>
                     <UserProfile />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/order-history"
+                element={
+                  <PrivateRoute>
+                    <OrderHistoryDetails />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/market-trends"
+                element={
+                  <PrivateRoute>
+                    <MarketTrendsDetails />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/notifications"
+                element={
+                  <PrivateRoute>
+                    <NotificationsDetails />
                   </PrivateRoute>
                 }
               />
