@@ -52,14 +52,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    checkSession();
+    // Check for a stored user session on mount
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
+      setIsAuthenticated(true);
+    } else {
+      checkSession(); // Check session if no user data stored
+    }
   }, []);
 
-  /**
-   * Checks if a user session exists.
-   * If a session exists and the user is verified, sets the user as authenticated.
-   * If the user is not verified, navigates to the email verification page.
-   */
   async function checkSession() {
     try {
       const currentSession = await account.getSession('current');
@@ -68,21 +70,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (loggedInUser.emailVerification) {
         setUser(loggedInUser);
         setIsAuthenticated(true);
+        localStorage.setItem('user', JSON.stringify(loggedInUser)); // Store user data
       } else {
         setUser(null);
         setIsAuthenticated(false);
+        localStorage.removeItem('user'); // Clear data if verification is missing
         navigate('/check-email');
       }
     } catch (error) {
       setUser(null);
       setIsAuthenticated(false);
+      localStorage.removeItem('user');
     }
   }
 
-  /**
-   * Authenticates the user using their email and password.
-   * Ensures the user's email is verified before granting access to protected routes.
-   */
   async function login(
     email: string,
     password: string
@@ -101,6 +102,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (loggedInUser.emailVerification) {
         setUser(loggedInUser);
         setIsAuthenticated(true);
+        localStorage.setItem('user', JSON.stringify(loggedInUser)); // Store user data
         triggerLoginSuccess(toast, null, loggedInUser.name);
         return loggedInUser;
       } else {
@@ -119,25 +121,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }
 
-  /**
-   * Logs out the current user by ending their session.
-   */
   async function logout() {
     try {
       await account.deleteSession('current');
       setUser(null);
       setIsAuthenticated(false);
+      localStorage.removeItem('user'); // Clear stored user data
       triggerSessionInactive(toast, null);
-      localStorage.removeItem('user');
     } catch (error) {
       console.error('Logout failed:', error);
     }
   }
 
-  /**
-   * Registers a new user, logs them in temporarily to set their name and role,
-   * sends a verification email, and then logs them out.
-   */
   async function register(
     fullName: string,
     email: string,
@@ -153,24 +148,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         isClosable: true,
       });
 
-      // Step 1: Create a new user account with the provided email and password
+      // Step 1: Create a new user account
       await account.create(ID.unique(), email, password);
 
-      // Step 2: Log the user in temporarily to set name and preferences
+      // Step 2: Log in temporarily to set name and preferences
       await account.createEmailPasswordSession(email, password);
 
-      // Step 3: Update the user's profile with their full name and role
+      // Step 3: Update user's name and role
       await account.updateName(fullName);
       await account.updatePrefs({ role });
 
-      // Step 4: Send verification email while user is still logged in
+      // Step 4: Send verification email
       await account.createVerification(`${window.location.origin}/verify`);
 
       // Step 5: Log the user out
       await logout();
 
-      // Redirect to check email page
-      navigate('/check-email');
+      navigate('/check-email'); // Redirect to email verification page
 
       toast({
         title: 'Registration Successful',
