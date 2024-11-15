@@ -1,4 +1,5 @@
 import { Client, Databases, Account, ID, Locale, Models } from 'appwrite';
+import { Storage } from 'appwrite'; // Added for storage
 
 // Enumeration for OAuth providers if needed in the login flow
 export enum OAuthProvider {
@@ -19,5 +20,6 @@ client
 export const account = new Account(client); // Account service for user authentication
 export const databases = new Databases(client); // Database service for data storage and retrieval
 export const locale = new Locale(client); // Locale service for location-based user information
+export const storage = new Storage(client); // Storage service for file uploads
 export { ID }; // Export ID for document creation and unique identifiers
 export type { Models }; // Export Models type if needed in type definitions
