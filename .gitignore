@@ -22,13 +22,3 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
-
-.env
-coverage/clover.xml
-coverage/coverage-final.json
-coverage/lcov-report/index.html
-coverage/lcov-report/sum.ts.html
-coverage/clover.xml
-coverage/coverage-final.json
-coverage/lcov-report/index.html
-coverage/lcov-report/sum.ts.html
