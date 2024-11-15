@@ -5,7 +5,7 @@ import React, {
   useState,
   ReactNode,
 } from 'react';
-import { account, ID, Models } from '../appwriteConfig';
+import { account, ID, Models, storage } from '../appwriteConfig';
 import { useToast } from '@chakra-ui/react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -32,6 +32,7 @@ interface AuthContextProps {
   updateUserPreferences: (
     newPreferences: Partial<Models.Preferences>
   ) => Promise<void>;
+  updateUserAvatar: (file: File) => Promise<void>; // Function to upload avatar
 }
 
 export const AuthContext = createContext<AuthContextProps | undefined>(
@@ -198,6 +199,55 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }
 
+  async function updateUserAvatar(file: File) {
+    console.log('Avatar upload initiated...');
+    try {
+      console.log('Uploading file to bucket...');
+      const bucketId = import.meta.env.VITE_APPWRITE_BUCKET_ID; // Vite environment variable
+      if (!bucketId) {
+        throw new Error('Bucket ID is not defined in environment variables.');
+      }
+
+      const uploadResponse = await storage.createFile(
+        bucketId,
+        ID.unique(),
+        file
+      );
+      console.log('Upload response:', uploadResponse);
+
+      const avatarUrl = storage.getFilePreview(bucketId, uploadResponse.$id);
+      console.log('Generated avatar URL:', avatarUrl);
+
+      console.log('Updating user preferences with new avatar URL...');
+      await account.updatePrefs({ avatar: avatarUrl });
+
+      console.log('User preferences updated successfully');
+      setUser((prevUser) =>
+        prevUser
+          ? { ...prevUser, prefs: { ...prevUser.prefs, avatar: avatarUrl } }
+          : prevUser
+      );
+
+      toast({
+        title: 'Avatar Updated',
+        description: 'Your profile picture has been successfully updated.',
+        status: 'success',
+        duration: 5000,
+        isClosable: true,
+      });
+    } catch (error) {
+      console.error('Error during avatar upload:', error);
+      toast({
+        title: 'Avatar Update Failed',
+        description:
+          'An error occurred while updating your avatar. Please try again.',
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      });
+    }
+  }
+
   return (
     <AuthContext.Provider
       value={{
@@ -208,6 +258,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         logout,
         checkSession,
         updateUserPreferences,
+        updateUserAvatar, // Provide new function in context
       }}
     >
       {children}
