@@ -1,13 +1,13 @@
-import { Box, Button, Flex, Link, Spacer, Text } from '@chakra-ui/react';
+import { Box, Button, Flex, Link, Spacer } from '@chakra-ui/react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 export const NavBar = () => {
   const { isAuthenticated, logout } = useAuth();
-  const location = useLocation(); // Get the current route
+  const location = useLocation();
 
-  // Hide the nav bar on the home page
-  if (location.pathname === '/') {
+  // Hide the navbar on the home ("/") and check email pages
+  if (location.pathname === '/' || location.pathname === '/check-email') {
     return null;
   }
 
@@ -20,17 +20,17 @@ export const NavBar = () => {
 
       {isAuthenticated ? (
         <>
-          {/* Show Home link unless the user is on the Home page */}
-          {location.pathname !== '/' && (
-            <NavLink to="/" style={{ marginRight: '15px' }}>
-              Home
-            </NavLink>
-          )}
-
-          {/* Show Dashboard link unless the user is on the Dashboard */}
+          {/* Show Dashboard link if not on the Dashboard page */}
           {location.pathname !== '/dashboard' && (
             <NavLink to="/dashboard" style={{ marginRight: '15px' }}>
               Dashboard
+            </NavLink>
+          )}
+
+          {/* Show Profile link if not on the Profile page */}
+          {location.pathname !== '/profile' && (
+            <NavLink to="/profile" style={{ marginRight: '15px' }}>
+              Profile
             </NavLink>
           )}
 
